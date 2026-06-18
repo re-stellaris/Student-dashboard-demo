@@ -1,0 +1,1888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Undergraduate Study Dashboard</title>
+<link rel="icon" type="image/png" href="../assets/Image_20260513001106_704_33.png"/>
+<!-- BUILD v9 · 2026-05-12 · GPA numeric scale + dot bars on color gradient -->
+<meta name="build-version" content="v9"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="data.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --purple:#0070e0;--bg:#f5f4f9;--surface:#fff;--border:#e2e5ed;
+  --text:#1a1d2e;--text2:#5a6076;--text3:#9198b0;
+  --radius:12px;--shadow:0 2px 12px rgba(0,0,0,.07);
+  /* ColorBrewer Blues — single hue gradient (color-blind safe) */
+  --b1:#eff3ff;--b2:#bdd7e7;--b3:#6baed6;--b4:#2171b5;
+  --m1:#fee2e2;--m1t:#991b1b;        /* legacy keep for flagged states */
+  /* Maturity colors (Blues gradient, NOT red/green) */
+  --mt1-bg:#eff3ff;--mt1-fg:#1e3a8a; /* Exposure */
+  --mt2-bg:#bdd7e7;--mt2-fg:#1e40af; /* Foundation */
+  --mt3-bg:#6baed6;--mt3-fg:#0c4a6e; /* Proficiency */
+  --mt4-bg:#2171b5;--mt4-fg:#ffffff; /* Mastery */
+  --accent:#2171b5;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+     background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;overflow-x:hidden}
+
+/* Nav */
+.topnav{background:var(--purple);display:flex;align-items:center;height:52px;padding:0 20px;position:sticky;top:0;z-index:100}
+.nav-logo{color:#fff;font-weight:800;font-size:14px;margin-right:16px;text-decoration:none;display:flex;align-items:center;gap:8px}
+.nav-link{color:rgba(255,255,255,.7);font-size:13px;text-decoration:none;display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px}
+.nav-link:hover{background:rgba(255,255,255,.1);color:#fff}
+.nav-sep{color:rgba(255,255,255,.3)}
+.nav-spacer{flex:1}
+.user-pill{display:flex;align-items:center;gap:8px;color:#fff;font-size:12px;background:rgba(255,255,255,.12);padding:5px 10px;border-radius:20px}
+.user-pill .ub{cursor:pointer;background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:20px;padding:2px 8px;font-size:11px;font-weight:700}
+/* Language switcher (Liquid Glass) */
+.lang-toggle{display:inline-flex;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:20px;overflow:hidden;
+  backdrop-filter:blur(20px) saturate(1.8);-webkit-backdrop-filter:blur(20px) saturate(1.8);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}
+.lang-btn{padding:5px 12px;font-size:11.5px;font-weight:700;cursor:pointer;border:none;background:transparent;color:rgba(255,255,255,.7);transition:all .15s;letter-spacing:.02em}
+.lang-btn:hover{background:rgba(255,255,255,.08);color:#fff}
+.lang-btn.active{background:rgba(255,255,255,.22);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.2)}
+.nav-logout{margin-left:10px;padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.16);color:#fff;font-size:12px;font-weight:700;cursor:pointer}
+.nav-logout:hover{background:rgba(255,255,255,.24)}
+
+/* School filter — generous spacing + glass aesthetic */
+.school-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:22px 36px;display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.school-bar .label{font-size:12px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.12em;margin-right:10px}
+#school-chips{display:flex;flex-wrap:wrap;gap:14px}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:22px;
+  border:1px solid rgba(0,0,0,.08);
+  background:rgba(255,255,255,.7);
+  backdrop-filter:blur(20px) saturate(1.8);
+  -webkit-backdrop-filter:blur(20px) saturate(1.8);
+  font-size:12.5px;font-weight:600;color:var(--text2);cursor:pointer;
+  transition:all .2s cubic-bezier(.4,0,.2,1);user-select:none;
+  box-shadow:0 1px 2px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.6)}
+.chip:hover{border-color:rgba(33,113,181,.5);color:var(--accent);transform:translateY(-1px);
+  box-shadow:0 4px 12px rgba(33,113,181,.15), inset 0 1px 0 rgba(255,255,255,.7)}
+.chip.on{background:linear-gradient(180deg, #2171b5 0%, #1a5fa0 100%);border-color:#1a5fa0;color:#fff;
+  box-shadow:0 2px 8px rgba(33,113,181,.35), inset 0 1px 0 rgba(255,255,255,.25)}
+.chip.on:hover{color:#fff;background:linear-gradient(180deg, #2980c4 0%, #1e6cb0 100%)}
+.course-item{cursor:grab}
+.course-item:active{cursor:grabbing}
+.chip .dot{width:9px;height:9px;border-radius:50%;background:currentColor;opacity:.9;box-shadow:0 0 0 2px rgba(255,255,255,.3)}
+.chip-sec{margin-left:auto;display:flex;gap:14px;align-items:center;font-size:12.5px;color:var(--text2);font-weight:600}
+.chip-sec > span:not(:first-child){margin-left:8px}
+.chip-sec select{padding:7px 12px;border:1px solid rgba(0,0,0,.08);border-radius:10px;font-size:12.5px;font-weight:600;
+  background:rgba(255,255,255,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  outline:none;color:var(--text);cursor:pointer;
+  box-shadow:0 1px 2px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.6)}
+.chip-sec select:hover{border-color:var(--accent)}
+
+/* Main — generous spacing per design feedback */
+.main{display:grid;grid-template-columns:300px 1fr;gap:32px;padding:32px 32px 40px;align-items:start;max-width:1500px;margin:0 auto}
+@media(max-width:1100px){.main{grid-template-columns:1fr;padding:24px;gap:24px}}
+.main > *{min-width:0}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.panel-header{padding:12px 16px;border-bottom:1px solid var(--border);background:var(--bg);display:flex;align-items:center;gap:8px}
+.panel-header h3{font-size:13px;font-weight:700;flex:1}
+.panel-header span{font-size:11px;color:var(--text3)}
+.panel-body{padding:12px}
+#course-browser-panel .panel-body{max-height:78vh;overflow-y:auto}
+.panel-body::-webkit-scrollbar{width:5px}
+.panel-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* Course list */
+.search-box{width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;outline:none;background:var(--bg);margin-bottom:10px}
+.search-box:focus{border-color:var(--accent)}
+.course-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;border:1.5px solid transparent;margin-bottom:4px;user-select:none}
+.course-item:hover{background:var(--bg);border-color:var(--border)}
+.course-item.selected{background:var(--b1);border-color:var(--accent)}
+.ci-code{font-size:11px;font-weight:700;color:var(--accent);min-width:68px}
+.ci-title{font-size:12px;color:var(--text);line-height:1.3;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ci-term{font-size:10px;color:var(--text3);font-weight:600}
+.ci-check{width:18px;height:18px;border-radius:4px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px}
+.course-item.selected .ci-check{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* Center — more breathing room between cards */
+.center-col{display:flex;flex-direction:column;gap:32px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px 32px;min-width:0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card h2{font-size:17px;font-weight:800;margin-bottom:6px;letter-spacing:-.01em}
+.card .sub{font-size:13px;color:var(--text2);margin-bottom:18px;line-height:1.5}
+.card-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:22px}
+.card-head h2{margin:0}
+/* Tooltip on titles (replaces Understanding Skills card) */
+.tip-trigger{position:relative;cursor:help;display:inline-flex;align-items:center;gap:6px}
+.tip-trigger::after{content:'ⓘ';color:var(--text3);font-size:14px;font-weight:600}
+.tip-trigger:hover .tip-body{opacity:1;visibility:visible;transform:translateY(0)}
+.tip-body{position:absolute;top:calc(100% + 10px);left:0;width:480px;max-width:90vw;background:var(--surface);
+  border:1px solid var(--border);border-radius:12px;padding:16px 18px;
+  font-size:13px;font-weight:500;color:var(--text);line-height:1.6;
+  box-shadow:0 12px 32px rgba(0,0,0,.18);z-index:50;
+  opacity:0;visibility:hidden;transform:translateY(-4px);
+  transition:opacity .2s, transform .2s, visibility .2s;text-align:left;
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);background:rgba(255,255,255,.95)}
+.tip-body b{color:var(--accent);font-size:13.5px}
+.tip-body p{margin-bottom:8px}
+.tip-body p:last-child{margin-bottom:0}
+
+/* Basket — drop zone */
+.basket{min-height:56px;border:2px dashed var(--border);border-radius:10px;padding:10px;display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;transition:border-color .15s,background .15s}
+.basket.drop-active{border-color:var(--accent);background:var(--b1);border-style:solid}
+.basket-empty{width:100%;text-align:center;color:var(--text3);font-size:12px;padding:8px 0;line-height:1.5;pointer-events:none}
+.basket-tag{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:0;font-size:11px;font-weight:700;color:#fff;background:var(--accent);cursor:grab;user-select:none}
+.basket-tag:active{cursor:grabbing}
+.basket-tag:hover{opacity:.85}
+.profile-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:8px}
+.ps-card{background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:18px 16px;text-align:center;cursor:pointer;transition:transform .12s,border-color .12s,box-shadow .12s;min-height:104px;display:flex;flex-direction:column;justify-content:center;gap:8px}
+.ps-card:hover{transform:translateY(-2px);border-color:var(--accent);box-shadow:0 6px 16px rgba(33,113,181,.14)}
+.ps-val{font-size:2rem;font-weight:900;line-height:1.05;color:var(--accent);letter-spacing:-.02em}
+.ps-lbl{font-size:13px;color:var(--text2);font-weight:600}
+/* Top-3 list inside 4th ps-card */
+.ps-top-list{display:flex;flex-direction:column;gap:4px;align-items:center;width:100%}
+.ps-top-list .ps-top-row{font-size:13px;font-weight:700;color:var(--accent);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.ps-top-list .ps-top-row .rk{display:inline-block;width:14px;color:var(--text3);font-weight:800}
+
+/* Skill section blocks */
+.chart-block{margin-bottom:40px}
+.chart-block:last-child{margin-bottom:0}
+.chart-block h3{font-size:15px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.chart-block h3 .h3-actions{display:inline-flex;gap:8px;align-items:center}
+.chart-block .csub{font-size:13px;color:var(--text2);margin-bottom:18px}
+.canvas-wrap{position:relative;width:100%;padding-bottom:46%;height:0}
+.canvas-wrap canvas{position:absolute;top:0;left:0;width:100%!important;height:100%!important}
+
+/* Score rows — 4-tier blue gradient (0/25/50/75/100) + gray dot marker */
+.score-row{display:flex;align-items:center;gap:16px;margin-bottom:14px}
+.score-lbl{font-size:14px;font-weight:700;color:var(--text);width:200px;flex-shrink:0;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.score-bar-bg{flex:1;height:14px;position:relative;border-radius:7px;overflow:visible;
+  background:linear-gradient(90deg, var(--b1) 0% 25%, var(--b2) 25% 50%, var(--b3) 50% 75%, var(--b4) 75% 100%);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
+.score-bar-mark{position:absolute;top:-2px;width:1.5px;height:18px;background:rgba(0,0,0,.25);border-radius:1px}
+.score-bar-mark::after{content:attr(data-l);position:absolute;top:18px;left:-7px;font-size:10px;font-weight:700;color:var(--text3)}
+.score-bar-dot{position:absolute;top:50%;transform:translate(-50%,-50%);width:18px;height:18px;border-radius:50%;
+  background:#5a6076;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.25);transition:left .35s ease;z-index:2}
+.score-bar-avg{position:absolute;top:-3px;width:2px;height:20px;background:#dc2626;border-radius:1px;z-index:1}
+.score-num,.score-mt{display:none}
+/* Sort toggle for skill bars */
+.sort-toggle{display:inline-flex;background:rgba(255,255,255,.7);border:1px solid rgba(0,0,0,.08);border-radius:8px;overflow:hidden;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.sort-toggle button{padding:5px 10px;font-size:11.5px;font-weight:700;border:none;background:transparent;color:var(--text2);cursor:pointer}
+.sort-toggle button.on{background:var(--accent);color:#fff}
+
+/* Scatter chart (per-course breakdown) */
+.scatter-block{margin-top:20px;border-top:1px solid var(--border);padding-top:18px}
+.scatter-block h3{font-size:13px;font-weight:800;margin-bottom:4px}
+.scatter-block .csub{font-size:11.5px;color:var(--text2);margin-bottom:12px}
+
+/* Section divider between Major & General — visual separator */
+.skill-section-title{font-size:12px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin:8px 0 14px;padding-bottom:8px;border-bottom:2px solid var(--accent);display:inline-block}
+
+/* Maturity scale (4 cells) */
+.maturity-scale{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
+.mt-cell{border-radius:8px;padding:10px;text-align:center}
+.mt-cell .mc-r{font-size:11px;font-weight:800}
+.mt-cell .mc-l{font-size:13px;font-weight:800;margin:3px 0}
+.mt-cell .mc-d{font-size:11px;line-height:1.4}
+
+/* Concept cards */
+.concept-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+@media(max-width:700px){.concept-grid{grid-template-columns:1fr}}
+.concept{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:12.5px;line-height:1.55}
+.concept b{color:var(--accent);font-size:13px;display:block;margin-bottom:4px}
+
+/* Insight */
+.insight{background:linear-gradient(135deg,#08306b,#2171b5);color:#fff;border-radius:10px;padding:14px 16px;margin-top:12px;font-size:13px;line-height:1.6}
+.insight strong{color:#fff}
+.insight .gap{margin-top:8px;background:rgba(255,255,255,.12);border-radius:6px;padding:8px 10px;font-size:12.5px}
+
+/* Buttons — Liquid Glass (macOS Sequoia / iOS 26 style) */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:10px;
+  border:1px solid rgba(0,0,0,.08);
+  background:rgba(255,255,255,.7);
+  backdrop-filter:blur(20px) saturate(1.8);
+  -webkit-backdrop-filter:blur(20px) saturate(1.8);
+  font-size:12.5px;font-weight:600;color:var(--text2);cursor:pointer;
+  transition:all .2s cubic-bezier(.4,0,.2,1);text-decoration:none;
+  box-shadow:0 1px 2px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.7)}
+.btn:hover{border-color:rgba(33,113,181,.4);color:var(--accent);transform:translateY(-1px);
+  box-shadow:0 4px 14px rgba(33,113,181,.18), inset 0 1px 0 rgba(255,255,255,.8)}
+.btn:active{transform:translateY(0);box-shadow:0 1px 2px rgba(0,0,0,.08), inset 0 1px 2px rgba(0,0,0,.06)}
+.btn-primary{background:linear-gradient(180deg, #2171b5 0%, #1a5fa0 100%);border-color:#1a5fa0;color:#fff;
+  box-shadow:0 2px 8px rgba(33,113,181,.35), inset 0 1px 0 rgba(255,255,255,.25)}
+.btn-primary:hover{background:linear-gradient(180deg, #2980c4 0%, #1e6cb0 100%);color:#fff;
+  box-shadow:0 4px 16px rgba(33,113,181,.45), inset 0 1px 0 rgba(255,255,255,.3)}
+
+/* Advisor */
+.advisor-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:700px){.advisor-row{grid-template-columns:1fr}}
+.advisor-col h4{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em}
+.adv-select{width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12.5px;background:var(--bg);outline:none;margin-bottom:10px}
+.adv-select:focus{border-color:var(--accent)}
+.adv-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);margin-bottom:6px;background:var(--surface);cursor:pointer}
+.adv-item:hover{border-color:var(--accent)}
+.adv-rank{font-size:11px;font-weight:900;color:var(--text3);width:18px;text-align:center}
+.adv-info{flex:1;min-width:0}
+.adv-code{font-size:11px;font-weight:700;color:var(--accent)}
+.adv-title{font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.adv-bar{height:5px;background:var(--border);border-radius:3px;margin-top:4px}
+.adv-bar-fill{height:100%;border-radius:3px;background:var(--accent)}
+.adv-score{font-size:13px;font-weight:800;color:var(--accent)}
+
+/* Matrix */
+.matrix-wrap{overflow-x:auto;max-height:480px;border:1px solid var(--border);border-radius:8px}
+table.matrix{border-collapse:collapse;width:100%;min-width:800px}
+table.matrix thead{position:sticky;top:0;z-index:10;background:var(--bg)}
+table.matrix th{font-size:11px;font-weight:700;color:var(--text2);padding:9px 10px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;background:var(--bg)}
+table.matrix th:hover{background:#e8eaf0}
+table.matrix td{padding:7px 10px;font-size:12px;border-bottom:1px solid var(--border)}
+table.matrix tr:hover td{background:#f8f9ff}
+.heat{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;min-width:34px;text-align:center}
+.dept-badge{display:inline-block;padding:2px 7px;border-radius:8px;font-size:10px;font-weight:700;color:#fff;background:var(--accent)}
+
+/* GPA chart */
+.gpa-grid{display:grid;grid-template-columns:1fr 320px;gap:24px}
+@media(max-width:900px){.gpa-grid{grid-template-columns:1fr}}
+.gpa-input{display:flex;gap:8px;margin-bottom:14px;align-items:center}
+.gpa-input select, .gpa-input input{padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;background:var(--surface);outline:none}
+.gpa-input select{min-width:0;flex-shrink:1}
+.gpa-input select#g-code, .gpa-input input#g-code{flex:1;min-width:0}
+.gpa-input select:focus, .gpa-input input:focus{border-color:var(--accent)}
+.gpa-list{max-height:320px;overflow-y:auto;font-size:13px;border:1px solid var(--border);border-radius:10px;padding:8px;background:var(--surface)}
+.gpa-list .row{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:var(--bg);border-radius:8px;margin-bottom:4px;font-size:13px}
+.gpa-list .row:hover{background:var(--b1)}
+.gpa-list .rg{font-weight:800;color:var(--accent);margin-right:8px;background:var(--b1);padding:3px 10px;border-radius:8px;font-size:13px}
+.gpa-list .rx{cursor:pointer;color:var(--text3);font-size:16px;line-height:1;padding:2px 8px}
+.gpa-list .rx:hover{color:#dc2626}
+/* Target GPA bar — ABOVE the chart, CGPA stat on the LEFT, Target on the RIGHT */
+.gpa-target-bar{display:flex;gap:18px;align-items:center;flex-wrap:wrap;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:18px;font-size:13px;color:var(--text2)}
+.gpa-target-bar label{font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px}
+.gpa-target-bar input[type=number]{width:80px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;font-weight:700;color:var(--accent)}
+.gpa-target-bar .stat{font-weight:600;font-size:13px}
+.gpa-target-bar .stat b{color:var(--text);font-weight:700}
+
+/* Notice block */
+.notice{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#1e40af;line-height:1.5;overflow-wrap:anywhere}
+.notice b{font-weight:700}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="topnav">
+  <a href="index.html" class="nav-logo">🎓 <span data-i18n="nav.title">Study Dashboard</span></a>
+  <span class="nav-sep">›</span>
+  <a href="index.html" class="nav-link">🏠 <span data-i18n="nav.home">Home</span></a>
+  <a href="guide.html" class="nav-link">📖 <span data-i18n="nav.guide">Guide</span></a>
+  <div class="nav-spacer"></div>
+  <div class="lang-toggle">
+    <button class="lang-btn" data-lang="en">EN</button>
+    <button class="lang-btn" data-lang="zh-CN">简中</button>
+    <button class="lang-btn" data-lang="zh-TW">繁中</button>
+  </div>
+  <button class="nav-logout" onclick="signOut()" data-i18n="nav.signout">Sign out</button>
+  <div class="user-pill" id="user-pill" style="display:none;margin-left:12px">
+    <span id="user-name">Student</span>
+    <button class="ub" onclick="signOut()" data-i18n="nav.signout">Sign out</button>
+  </div>
+</nav>
+
+<!-- School filter -->
+<div class="school-bar">
+  <span class="label" data-i18n="filter.schools">🗂️ Course Category</span>
+  <span class="chip on" data-d="ALL" onclick="toggleSchool('ALL')" data-i18n="filter.all">All</span>
+  <span id="school-chips"></span>
+  <div class="chip-sec">
+    <span data-i18n="filter.term">Term:</span>
+    <select id="term-filter" onchange="renderCourseList();renderMatrix()">
+      <option value="ALL" data-i18n="filter.any">Any</option>
+      <option value="Fall" data-i18n="filter.fall">Fall</option>
+      <option value="Spring" data-i18n="filter.spring">Spring</option>
+    </select>
+    <span data-i18n="filter.level">Level:</span>
+    <select id="level-filter" onchange="renderCourseList();renderMatrix()">
+      <option value="ALL" data-i18n="filter.any">Any</option>
+      <option value="1000">1000</option>
+      <option value="2000">2000</option>
+      <option value="3000">3000</option>
+      <option value="4000">4000</option>
+    </select>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- Left: course browser -->
+  <div class="panel" id="course-browser-panel">
+    <div class="panel-header">
+      <h3>📚 Available Courses</h3>
+      <span id="course-count-label">0 courses</span>
+    </div>
+    <div class="panel-body">
+      <input class="search-box" id="course-search" placeholder="Search by code or title..." oninput="renderCourseList()"/>
+      <div id="course-list"></div>
+    </div>
+  </div>
+
+  <!-- Center -->
+  <div class="center-col">
+
+    <!-- Student Portfolio (moved to top) -->
+    <div class="card" id="section-basket">
+      <div class="card-head">
+        <h2 data-i18n="card.portfolio">🎒 Student Portfolio</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" onclick="document.getElementById('transcript-file').click()">📥 Import Transcript</button>
+          <input type="file" id="transcript-file" style="display:none" accept=".pdf,.xlsx,.xls,.csv" onchange="importTranscript(event)"/>
+          <button class="btn" onclick="exportPortfolio()">📤 Export Excel</button>
+          <button class="btn" onclick="clearBasket()">Clear</button>
+        </div>
+      </div>
+      <div class="basket" id="basket">
+        <div class="basket-empty" id="basket-empty">📥 Drag courses here, click any course on the left, or import your transcript.<br><span style="font-size:11px">Tip: drag a tag out of this area to remove it.</span></div>
+      </div>
+      <div class="profile-summary">
+        <div class="ps-card" onclick="jumpTo('section-basket')"><div class="ps-val" id="ps-courses">0</div><div class="ps-lbl" data-i18n="ps.courses">📚 Courses</div></div>
+        <div class="ps-card" onclick="jumpTo('section-basket')"><div class="ps-val" id="ps-credits">0</div><div class="ps-lbl" data-i18n="ps.credits">⭐ Credits</div></div>
+        <div class="ps-card" onclick="jumpTo('section-gpa')"><div class="ps-val" id="ps-avg">—</div><div class="ps-lbl" data-i18n="ps.avg">🎓 Avg GPA</div></div>
+        <div class="ps-card" onclick="jumpTo('section-skill')"><div class="ps-top-list" id="ps-top"><div class="ps-top-row" style="color:var(--text3);font-weight:600">—</div></div><div class="ps-lbl" data-i18n="ps.top">🏆 Top 3 Strengths</div></div>
+      </div>
+    </div>
+
+    <!-- GPA Trajectory (moved up — follows Portfolio) -->
+    <div class="card" id="section-gpa">
+      <div class="card-head">
+        <div>
+          <h2 data-i18n="card.gpa">📈 Grade Trajectory</h2>
+          <div class="sub" data-i18n="gpa.sub">Track your letter grades, semester GPA, current CGPA, and goal GPA over time</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button id="clear-grades-btn" class="btn" data-i18n="gpa.clear">Clear</button>
+        </div>
+      </div>
+      <!-- Target GPA bar: CGPA / Latest sem on the LEFT, target on the RIGHT -->
+      <div class="gpa-target-bar">
+        <span class="stat" id="gpa-stats"><b>CGPA</b>: <b style="color:var(--accent)">—</b> &nbsp;·&nbsp; <b>Latest sem</b>: <b style="color:var(--accent)">—</b></span>
+        <label style="margin-left:auto"><span data-i18n="gpa.target">🎯 Target CGPA</span>: <input type="number" id="goal-gpa" min="0" max="4" step="0.01" value="3.50" oninput="renderGPAChart()"/></label>
+      </div>
+
+      <div class="gpa-grid">
+        <div>
+          <div class="canvas-wrap" style="padding-bottom:52%"><canvas id="gpa-chart"></canvas></div>
+        </div>
+        <div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:8px;font-weight:700" data-i18n="gpa.add">Add a grade</div>
+          <div class="gpa-input">
+            <select id="g-sem" title="Semester">
+              <option value="F23">FAL 23</option><option value="S24">SPR 24</option><option value="SUM24">SUM 24</option>
+              <option value="F24">FAL 24</option><option value="S25" selected>SPR 25</option><option value="SUM25">SUM 25</option>
+              <option value="F25">FAL 25</option><option value="S26">SPR 26</option><option value="SUM26">SUM 26</option>
+              <option value="F26">FAL 26</option><option value="S27">SPR 27</option>
+            </select>
+            <input id="g-code" list="g-code-list" placeholder="Course code (type or pick)" autocomplete="off" style="flex:1;min-width:0"/>
+            <datalist id="g-code-list"></datalist>
+            <select id="g-grade" title="Letter grade">
+              <option>A</option><option>A-</option>
+              <option>B+</option><option>B</option><option>B-</option>
+              <option>C+</option><option>C</option><option>C-</option>
+              <option>D+</option><option>D</option><option>F</option>
+            </select>
+          </div>
+          <button id="add-grade-btn" class="btn btn-primary" style="width:100%;margin-bottom:14px;justify-content:center" data-i18n="gpa.addbtn">＋ Add Grade</button>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:8px;font-weight:700" data-i18n="gpa.recorded">Recorded grades (chronological)</div>
+          <div class="gpa-list" id="gpa-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Skill profile (moved AFTER GPA) -->
+    <div class="card" id="section-skill">
+      <div class="card-head">
+        <div>
+          <h2 class="tip-trigger"><span data-i18n="card.skill">📊 Skill Ability Profile</span><span class="tip-body">
+            <p><b>🎯 Major Skills</b> — 9 specialized competencies of your selected category. Example: Accounting tracks Financial Reporting, Auditing, Taxation, etc. Shows your <b>depth in your major</b>.</p>
+            <p><b>🌐 General Skills (9 universal)</b> — <b>PK</b> = average of your major skills (overall depth). <b>QA</b> Quantitative · <b>DI</b> Data · <b>CM</b> Communication · <b>IP</b> Innovation · <b>ER</b> Ethics · <b>TL</b> Teamwork · <b>IC</b> Intercultural · <b>SL</b> Self-directed.</p>
+            <p><b>How scores are computed</b> — each course's outcome/syllabus is matched against keyword lists for every skill dimension. Score = coverage (65%) + depth (20%) + specificity (15%), rounded to 0–100. Red mark on each row = your selected category's average (only counting courses where the skill > 0).</p>
+          </span></h2>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <span style="font-size:13px;color:var(--text2);font-weight:600" data-i18n="skill.major.dept">Major dept:</span>
+          <select id="major-dept-select" class="adv-select" style="width:auto;margin:0;padding:7px 12px;font-size:13px"></select>
+        </div>
+      </div>
+
+      <!-- Major Skills section -->
+      <div class="chart-block">
+        <h3>
+          <span>🎯 <span data-i18n="skill.major">Major Skills</span> <span style="font-weight:500;color:var(--text3);font-size:12px" id="major-dept-label">—</span></span>
+          <span class="h3-actions">
+            <span class="sort-toggle" data-target="major">
+              <button data-dir="desc" class="on" title="High → Low">▼</button>
+              <button data-dir="asc" title="Low → High">▲</button>
+            </span>
+          </span>
+        </h3>
+        <div class="csub" data-i18n="skill.major.sub">9 specialized dimensions for the selected department · gray dot = your score · red mark = department average</div>
+        <div id="major-score-bars"></div>
+      </div>
+
+      <!-- General Skills section -->
+      <div class="chart-block">
+        <h3>
+          <span>🌐 <span data-i18n="skill.gen">General Skills</span></span>
+          <span class="h3-actions">
+            <span class="sort-toggle" data-target="gen">
+              <button data-dir="desc" class="on" title="High → Low">▼</button>
+              <button data-dir="asc" title="Low → High">▲</button>
+            </span>
+          </span>
+        </h3>
+        <div class="csub" data-i18n="skill.gen.sub">9 cross-disciplinary competencies · PK (Professional Knowledge) is auto-computed as the average of your major skills</div>
+        <div id="gen-score-bars"></div>
+      </div>
+
+      <div id="portfolio-insight" class="insight" style="display:none">
+        <div id="insight-text"></div>
+        <div id="insight-gap" class="gap" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- Skill Driven Recommendation (renamed) -->
+    <div class="card">
+      <h2 data-i18n="card.advisor">🎯 Skill Driven Recommendation</h2>
+      <div class="sub" data-i18n="advisor.sub">Pick a target skill — we'll rank courses that build it most efficiently (filtered by your category + term selections)</div>
+      <div class="advisor-row">
+        <div class="advisor-col">
+          <h4>Major Skill</h4>
+          <select class="adv-select" id="adv-major" onchange="updateAdvisor()"></select>
+          <div id="adv-major-list"></div>
+        </div>
+        <div class="advisor-col">
+          <h4>General Skill</h4>
+          <select class="adv-select" id="adv-gen" onchange="updateGenAdvisor()"></select>
+          <div id="adv-gen-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Matrix -->
+    <div class="card">
+      <div class="card-head">
+        <div><h2 data-i18n="card.matrix">🔍 Skill Matrix</h2><div class="sub" data-i18n="card.matrix.sub">All courses by all skills — click any column header to sort</div></div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <select id="matrix-view" class="adv-select" style="width:auto;margin:0;padding:6px 10px" onchange="renderMatrix()"></select>
+        </div>
+      </div>
+      <div class="matrix-wrap"><table class="matrix" id="matrix-table"></table></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── Mock if data.js not yet loaded ──
+if (!window.DATA) {
+  window.DATA = {departments:{}, general_dimensions:[], courses:[]};
+  document.body.insertAdjacentHTML('afterbegin', '<div style="background:#fee2e2;color:#991b1b;padding:12px;text-align:center;font-weight:700">⚠️ data.js not found — please regenerate. Showing empty dashboard.</div>');
+}
+
+// Normalize dimensions: support both array and object form from data.js
+function normDims(deptKey){
+  const d = DATA.departments[deptKey]; if(!d) return [];
+  const dims = d.dimensions;
+  if (Array.isArray(dims)) return dims;
+  return Object.keys(dims).map(k => ({id:k, ...dims[k]}));
+}
+function normGenDims(){
+  const g = DATA.general_dimensions;
+  if (Array.isArray(g)) return g;
+  return Object.keys(g).map(k => ({id:k, ...g[k]}));
+}
+
+// Remap categories: HSS → PSY/TRA/HUM(others), MED → BIO. Run BEFORE any rendering.
+function remapCategories(){
+  if (!DATA || !DATA.departments) return;
+  // 1. Rename MED → BIO
+  if (DATA.departments.MED && !DATA.departments.BIO){
+    DATA.departments.BIO = Object.assign({}, DATA.departments.MED, {
+      name:'Biology & Life Sciences', name_zh:'生物科学'
+    });
+    delete DATA.departments.MED;
+  }
+  // 2. Split HSS into PSY / TRA (and HUM bucket for ENB/LAW/GFH)
+  if (DATA.departments.HSS){
+    const hssDims = DATA.departments.HSS.dimensions;
+    DATA.departments.PSY = {name:'Psychology', name_zh:'心理学', color:'#7c3aed', dimensions:hssDims};
+    DATA.departments.TRA = {name:'Translation', name_zh:'翻译', color:'#a855f7', dimensions:hssDims};
+  }
+  // 3. Walk courses and reassign dept
+  DATA.courses.forEach(c => {
+    if (c.dept === 'MED') c.dept = 'BIO';
+    if (c.dept === 'HSS'){
+      const p = (c.code.match(/^[A-Z]+/)||[''])[0];
+      if (p === 'PSY') c.dept = 'PSY';
+      else if (p === 'TRA') c.dept = 'TRA';
+      else if (p === 'PED') c.dept = 'PED';
+      else if (p.startsWith('GE')) c.dept = 'GE';
+      else c.dept = 'GE'; // ENB, LAW, GFH → general bucket
+    }
+  });
+  // Remove now-empty HSS
+  const hssCount = DATA.courses.filter(c => c.dept === 'HSS').length;
+  if (hssCount === 0) delete DATA.departments.HSS;
+}
+remapCategories();
+
+let ALL_DEPTS = Object.keys(DATA.departments);
+// Dept colors — fresh palette, all distinct, no HSS/MED
+const DEPT_COLOR = {ACT:'#2563eb',MAT:'#dc2626',MGT:'#0891b2',MKT:'#ea580c',CSC:'#7c2d12',FIN:'#1e40af',MIS:'#9333ea',GE:'#475569',PED:'#16a34a',PSY:'#7c3aed',TRA:'#a855f7',BIO:'#059669'};
+
+// State
+let activeSchools = new Set(['ALL']);
+let selectedCodes = new Set();
+let majorDept = ALL_DEPTS.find(d => d!=='GE' && d!=='PED') || ALL_DEPTS[0] || 'ACT';
+let matrixSortCol = null, matrixSortDir = 'desc';
+let gpaRecords = [];
+let majorScatter = null, genScatter = null, gpaChart = null;
+let renderMatrixScheduled = false;
+let dragCode = null; // course being dragged
+
+function jumpTo(id){ const el = document.getElementById(id); if(el) el.scrollIntoView({behavior:'smooth', block:'start'}); }
+
+// ── Unified font for ALL Chart.js charts — matches .score-lbl style above ──
+function applyChartDefaults(){
+  if (typeof Chart === 'undefined') return;
+  const sysFont = '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif';
+  Chart.defaults.font.family = sysFont;
+  Chart.defaults.font.size = 13;
+  Chart.defaults.font.weight = '700';
+  Chart.defaults.color = '#1a1d2e';
+  Chart.defaults.devicePixelRatio = window.devicePixelRatio || 2; // sharper text on retina
+  Chart.defaults.plugins.legend.labels.font = {family: sysFont, size: 13, weight:'700'};
+  Chart.defaults.plugins.tooltip.titleFont = {family: sysFont, size: 13, weight: '700'};
+  Chart.defaults.plugins.tooltip.bodyFont = {family: sysFont, size: 12, weight: '600'};
+}
+
+// Persistence
+const LS_KEY = 'cuhksz_portfolio';
+function saveState(){
+  try { localStorage.setItem(LS_KEY, JSON.stringify({selected:[...selectedCodes],schools:[...activeSchools],majorDept,gpa:gpaRecords})); } catch(e){}
+}
+function loadState(){
+  try {
+    const s = JSON.parse(localStorage.getItem(LS_KEY)||'null');
+    if(!s) return;
+    if(s.selected) selectedCodes = new Set(s.selected);
+    if(s.schools && s.schools.length){
+      // Filter out depts that no longer exist (HSS/MED were remapped)
+      const filtered = [...s.schools].filter(k => k === 'ALL' || DATA.departments[k]);
+      activeSchools = new Set(filtered.length ? filtered : ['ALL']);
+    }
+    if(s.majorDept && DATA.departments[s.majorDept]) majorDept = s.majorDept;
+    if(s.gpa) gpaRecords = s.gpa;
+  } catch(e){}
+}
+
+// ── User pill ──
+function loadUser(){
+  try {
+    const s = JSON.parse(localStorage.getItem('cuhksz_session')||'null');
+    if (s && s.name){
+      document.getElementById('user-pill').style.display = 'flex';
+      document.getElementById('user-name').textContent = s.name;
+    }
+  } catch(e){}
+}
+function signOut(){
+  if(!confirm('Sign out? Your portfolio is preserved on this device.')) return;
+  localStorage.removeItem('cuhksz_session');
+  location.href = 'index.html';
+}
+
+// ── School chips ──
+function renderSchoolChips(){
+  const html = ALL_DEPTS.map(d => {
+    const dep = DATA.departments[d];
+    const name = (dep && (dep.name_en || dep.name)) || d;
+    const on = activeSchools.has(d);
+    return `<span class="chip ${on?'on':''}" data-d="${d}" onclick="toggleSchool('${d}')" title="${name}">
+      <span class="dot" style="color:${DEPT_COLOR[d]||'#888'}"></span>${d}</span>`;
+  }).join('');
+  document.getElementById('school-chips').innerHTML = html;
+  // Update ALL chip
+  document.querySelectorAll('.chip[data-d="ALL"]').forEach(c => c.classList.toggle('on', activeSchools.has('ALL')));
+}
+function toggleSchool(d){
+  if (d==='ALL'){
+    activeSchools = new Set(['ALL']);
+  } else {
+    activeSchools.delete('ALL');
+    if (activeSchools.has(d)) activeSchools.delete(d); else activeSchools.add(d);
+    if (activeSchools.size === 0) activeSchools = new Set(['ALL']);
+  }
+  renderSchoolChips();
+  renderCourseList(); renderMatrix();
+  saveState();
+}
+function activeDeptSet(){
+  if (activeSchools.has('ALL')) return new Set(ALL_DEPTS);
+  return new Set([...activeSchools]);
+}
+
+// ── Course list ──
+function termMatch(c){
+  const t = document.getElementById('term-filter').value;
+  if (t==='ALL') return true;
+  // If a course has no `offered` field, treat as available in both terms (legacy data).
+  const off = c.offered;
+  if (!off || !off.length) return true;
+  return off.includes(t);
+}
+// Return display name preferring English (data.js mixes name=EN for major dims, name=ZH for general dims)
+function dimName(d){ return d.name_en || d.name || d.id; }
+function isChinese(s){ return /[一-鿿]/.test(String(s||'')); }
+function dimLabel(d){
+  // Prefer English name; if d.name is English use it, else fall back to name_en
+  if (d.name_en) return d.name_en;
+  if (d.name && !isChinese(d.name)) return d.name;
+  return d.id;
+}
+function levelMatch(c){
+  const lv = document.getElementById('level-filter').value;
+  if (lv==='ALL') return true;
+  const cl = c.level || (parseInt((c.code.match(/\d+/)||[0])[0]/1000)*1000);
+  return cl >= parseInt(lv) && cl < parseInt(lv)+1000;
+}
+function visibleCourses(){
+  const depts = activeDeptSet();
+  return DATA.courses.filter(c => depts.has(c.dept) && termMatch(c) && levelMatch(c));
+}
+function renderCourseList(){
+  const q = document.getElementById('course-search').value.trim().toLowerCase();
+  const list = visibleCourses().filter(c =>
+    !q || c.code.toLowerCase().includes(q) || c.title.toLowerCase().includes(q)
+  ).slice(0, 200); // cap for perf
+  document.getElementById('course-count-label').textContent = `${visibleCourses().length} courses`;
+  document.getElementById('course-list').innerHTML = list.length
+    ? list.map(c => {
+        const term = (c.offered||[]).join('/');
+        const col = DEPT_COLOR[c.dept] || 'var(--accent)';
+        return `<div class="course-item ${selectedCodes.has(c.code)?'selected':''}"
+          draggable="true" data-code="${c.code}" data-source="list"
+          style="${selectedCodes.has(c.code)?`border-color:${col};background:${col}15`:''}"
+          title="${c.title} — drag to portfolio or click to toggle">
+          <span class="ci-code" style="color:${col}">${c.code}</span>
+          <span class="ci-title">${c.title}</span>
+          <span class="ci-term">${term}</span>
+          <span class="ci-check"${selectedCodes.has(c.code)?` style="background:${col};border-color:${col};color:#fff"`:''}>${selectedCodes.has(c.code)?'✓':''}</span>
+        </div>`;
+      }).join('')
+    : '<div style="text-align:center;color:var(--text3);padding:20px;font-size:12px">No courses match the filters</div>';
+}
+
+// ── Drag and Drop (event-delegation based, robust on file://) ──
+// Wire ONCE on document for all current+future course items + basket tags.
+document.addEventListener('dragstart', (e) => {
+  const el = e.target.closest('[data-code]');
+  if (!el) return;
+  dragCode = el.dataset.code;
+  e.dataTransfer.effectAllowed = el.dataset.source === 'basket' ? 'move' : 'copy';
+  try { e.dataTransfer.setData('text/plain', dragCode); } catch(err){}
+  el.style.opacity = '.45';
+});
+document.addEventListener('dragend', (e) => {
+  const el = e.target.closest('[data-code]');
+  if (el) el.style.opacity = '';
+  // If dragging a basket tag and drop landed outside basket → remove
+  if (el && el.dataset.source === 'basket' && dragCode){
+    const basket = document.getElementById('basket').getBoundingClientRect();
+    const inside = e.clientX >= basket.left && e.clientX <= basket.right
+                && e.clientY >= basket.top && e.clientY <= basket.bottom;
+    if (!inside){
+      selectedCodes.delete(dragCode);
+      renderAll(); saveState();
+    }
+  }
+  dragCode = null;
+});
+// Click on course-item toggles (delegated)
+document.addEventListener('click', (e) => {
+  const el = e.target.closest('.course-item[data-code]');
+  if (el){ toggleCourse(el.dataset.code); return; }
+  const tag = e.target.closest('.basket-tag[data-code]');
+  if (tag){ toggleCourse(tag.dataset.code); return; }
+  // Sort toggle (skill bars)
+  const sb = e.target.closest('.sort-toggle button');
+  if (sb){
+    const wrap = sb.closest('.sort-toggle');
+    const section = wrap.dataset.target;
+    sortDir[section] = sb.dataset.dir;
+    wrap.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === sb));
+    renderCharts();
+  }
+});
+// Basket drop zone
+function bindBasketDrop(){
+  const basket = document.getElementById('basket');
+  if (!basket || basket.dataset.bound) return;
+  basket.dataset.bound = '1';
+  basket.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    basket.classList.add('drop-active');
+  });
+  basket.addEventListener('dragleave', (e) => {
+    if (e.target === basket) basket.classList.remove('drop-active');
+  });
+  basket.addEventListener('drop', (e) => {
+    e.preventDefault();
+    basket.classList.remove('drop-active');
+
+    // File drop (e.g. PDF transcript)
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      importTranscript({ target: { files: [file], value: '' } });
+      dragCode = null;
+      return;
+    }
+
+    // Course code drop
+    let code = '';
+    try { code = e.dataTransfer.getData('text/plain') || ''; } catch(err){}
+    code = (code || dragCode || '').trim();
+    if (code && !selectedCodes.has(code)){
+      selectedCodes.add(code);
+      renderAll(); saveState();
+    }
+    dragCode = null;
+  });
+}
+
+// ── Selection / basket ──
+function toggleCourse(code){
+  selectedCodes.has(code) ? selectedCodes.delete(code) : selectedCodes.add(code);
+  renderAll(); saveState();
+}
+function clearBasket(){ selectedCodes.clear(); renderAll(); saveState(); }
+function renderBasket(){
+  const basket = document.getElementById('basket');
+  if (!basket) return;
+  if (selectedCodes.size === 0){
+    basket.innerHTML = '<div class="basket-empty" id="basket-empty">📥 Drag courses here, click any course on the left, or import your transcript.<br><span style="font-size:11px">Tip: drag a tag out of this area to remove it.</span></div>';
+    const psC = document.getElementById('ps-courses'); if(psC) psC.textContent = 0;
+    const psCr = document.getElementById('ps-credits'); if(psCr) psCr.textContent = 0;
+    // ps-avg and ps-top are updated by renderProfileSummary (called from renderCharts)
+    return;
+  }
+  basket.innerHTML = [...selectedCodes].map(code => {
+    const c = DATA.courses.find(x => x.code===code);
+    if(!c) return '';
+    const col = DEPT_COLOR[c.dept] || 'var(--accent)';
+    return `<span class="basket-tag" style="background:${col}"
+      draggable="true" data-code="${code}" data-source="basket"
+      title="Click or drag out of the box to remove">${code} ×</span>`;
+  }).join('');
+  const sel = DATA.courses.filter(c => selectedCodes.has(c.code));
+  const credits = sel.reduce((s,c) => s + (c.credit||3), 0);
+  const psC = document.getElementById('ps-courses'); if(psC) psC.textContent = sel.length;
+  const psCr = document.getElementById('ps-credits'); if(psCr) psCr.textContent = credits;
+}
+
+// ── Aggregate scores ──
+function aggregateScores(dims, key){
+  const sel = DATA.courses.filter(c => selectedCodes.has(c.code));
+  if (!sel.length) return {};
+  const r = {};
+  dims.forEach(d => {
+    let total = 0, n = 0;
+    sel.forEach(c => {
+      const v = c[key] && c[key][d.id];
+      if (typeof v === 'number'){ total += v; n++; }
+    });
+    r[d.id] = n ? Math.round(total / n) : 0;
+  });
+  return r;
+}
+
+// Dynamic dept average (mean of >0 scores in that dept for that dim)
+function deptAvg(deptKey, dims, key){
+  const courses = DATA.courses.filter(c => c.dept===deptKey);
+  const r = {};
+  dims.forEach(d => {
+    const vals = courses.map(c => (c[key] && c[key][d.id]) || 0).filter(v => v > 0);
+    r[d.id] = vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : 0;
+  });
+  return r;
+}
+// General-skill dept avg: mean across the active dept set
+function generalAvg(dims){
+  const depts = activeDeptSet();
+  const courses = DATA.courses.filter(c => depts.has(c.dept));
+  const r = {};
+  dims.forEach(d => {
+    const vals = courses.map(c => (c.gen_scores && c.gen_scores[d.id]) || 0).filter(v => v>0);
+    r[d.id] = vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : 0;
+  });
+  return r;
+}
+
+function maturity(score){
+  // Quartile thresholds: 0-25 Exposure · 25-50 Foundation · 50-75 Proficiency · 75-100 Mastery
+  if (score >= 75) return {label:'Mastery', bg:'var(--mt4-bg)', fg:'var(--mt4-fg)'};
+  if (score >= 50) return {label:'Proficiency', bg:'var(--mt3-bg)', fg:'var(--mt3-fg)'};
+  if (score >= 25) return {label:'Foundation', bg:'var(--mt2-bg)', fg:'var(--mt2-fg)'};
+  return {label:'Exposure', bg:'var(--mt1-bg)', fg:'var(--mt1-fg)'};
+}
+
+// ── Charts ──
+function renderProfileSummary(majorDims, majorScores, genDims, genScores){
+  const all = [...majorDims.map(d => ({d, s:majorScores[d.id]||0})), ...genDims.map(d => ({d, s:genScores[d.id]||0}))];
+  // Avg GPA: compute from gpaRecords (4.0 scale) — fall back to '—'
+  const psAvgEl = document.getElementById('ps-avg');
+  if (psAvgEl){
+    if (gpaRecords && gpaRecords.length){
+      const gpa = gpaRecords.reduce((s,g)=>s+gradeToGPA(g.grade),0)/gpaRecords.length;
+      psAvgEl.textContent = gpa.toFixed(2);
+    } else {
+      psAvgEl.textContent = '—';
+    }
+  }
+  // Top 3 strongest skills
+  const psTopEl = document.getElementById('ps-top');
+  if (psTopEl){
+    if (!all.length){
+      psTopEl.innerHTML = '<div class="ps-top-row" style="color:var(--text3);font-weight:600">—</div>';
+      return;
+    }
+    const top3 = [...all].sort((a,b) => b.s - a.s).slice(0,3);
+    psTopEl.innerHTML = top3.map((x,i) =>
+      `<div class="ps-top-row"><span class="rk">${i+1}.</span> ${dimLabel(x.d)} <span style="color:var(--text3);font-weight:600">(${x.s})</span></div>`
+    ).join('');
+  }
+}
+
+// Sort state for score bars (per section)
+const sortDir = { major: 'desc', gen: 'desc' };
+
+function renderScoreBars(containerId, dims, scores, avgScores, section){
+  const dir = sortDir[section] || 'desc';
+  const sortedDims = [...dims].sort((a,b) => {
+    const va = scores[a.id] || 0, vb = scores[b.id] || 0;
+    return dir === 'desc' ? vb - va : va - vb;
+  });
+  const html = sortedDims.map(d => {
+    const v = scores[d.id] || 0;
+    const av = avgScores[d.id] || 0;
+    const lbl = dimLabel(d);
+    return `<div class="score-row" title="${lbl}: ${v}${av>0?' · category avg '+av:''}">
+      <span class="score-lbl">${lbl}</span>
+      <div class="score-bar-bg">
+        <div class="score-bar-mark" data-l="25" style="left:25%"></div>
+        <div class="score-bar-mark" data-l="50" style="left:50%"></div>
+        <div class="score-bar-mark" data-l="75" style="left:75%"></div>
+        ${av>0?`<div class="score-bar-avg" style="left:${av}%" title="Category avg: ${av}"></div>`:''}
+        <div class="score-bar-dot" style="left:${v}%" title="Your score: ${v}"></div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById(containerId).innerHTML = html;
+}
+
+// Per-course scatter — each selected course is one series of dots across all dims
+function makeScatterChart(canvasId, prevChart, dims, scoreKey){
+  if (prevChart){ prevChart.destroy(); }
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  const sel = DATA.courses.filter(c => selectedCodes.has(c.code));
+  // Tight blue-only palette
+  const palette = ['#08306b','#2171b5','#4292c6','#6baed6','#9ecae1','#1e3a8a','#1d4ed8','#3b82f6','#60a5fa','#0c4a6e','#0369a1','#0284c7','#0ea5e9','#38bdf8','#7dd3fc'];
+  // Add small horizontal jitter per series to avoid overlapping dots in the same column
+  const datasets = sel.map((c, i) => {
+    const jitter = sel.length > 1 ? (i - (sel.length-1)/2) * 0.18 / Math.max(1, sel.length-1) * Math.min(sel.length, 6) : 0;
+    return {
+      label: c.code,
+      data: dims.map((d, di) => ({x: di + jitter, y: (c[scoreKey] && c[scoreKey][d.id])||0})),
+      backgroundColor: palette[i % palette.length],
+      borderColor: '#08306b',
+      borderWidth: 0.8,
+      pointRadius: 3.5, pointHoverRadius: 5.5, showLine: false
+    };
+  });
+  return new Chart(ctx, {
+    type:'scatter',
+    data:{datasets},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      layout:{padding:{top:10, bottom:8, left:6, right:10}},
+      scales:{
+        x:{
+          type:'linear', min:-0.55, max:dims.length-0.45,
+          ticks:{
+            callback:(v) => { const d = dims[Math.round(v)]; return d ? dimLabel(d) : ''; },
+            stepSize:1, font:{size:13, weight:'700', family:'-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif'},
+            color:'#1a1d2e',
+            maxRotation:0, minRotation:0, autoSkip:false, padding:6
+          },
+          grid:{color:'rgba(0,0,0,.04)'},
+          title:{display:false}
+        },
+        y:{min:0, max:100,
+           ticks:{font:{size:13, weight:'700'}, color:'#1a1d2e', stepSize:25, padding:6},
+           grid:{color:'rgba(0,0,0,.05)'},
+           title:{display:false}}
+      },
+      plugins:{
+        legend:{
+          display:true, position:'bottom', align:'center',
+          labels:{
+            font:{size:13, weight:'700'}, color:'#1a1d2e',
+            boxWidth:12, boxHeight:12, padding:16,
+            usePointStyle:true, pointStyle:'circle'
+          }
+        },
+        tooltip:{callbacks:{
+          title: (items) => items.length ? (dims[Math.round(items[0].parsed.x)] && dimLabel(dims[Math.round(items[0].parsed.x)])) || '' : '',
+          label: (ctx) => `${ctx.dataset.label}: ${Math.round(ctx.parsed.y)}`
+        }}
+      }
+    }
+  });
+}
+
+function renderCharts(){
+  const majorDims = normDims(majorDept);
+  const genDims = normGenDims();
+  const myMajor = aggregateScores(majorDims, 'major_scores');
+  const myGen = aggregateScores(genDims, 'gen_scores');
+  // Override PK = mean of major_scores for the portfolio
+  if (selectedCodes.size > 0){
+    const sel = DATA.courses.filter(c => selectedCodes.has(c.code));
+    const pkVals = sel.flatMap(c => Object.values(c.major_scores||{}).filter(v => v>0));
+    if (pkVals.length) myGen.PK = Math.round(pkVals.reduce((a,b)=>a+b,0)/pkVals.length);
+  }
+  const avgMajor = deptAvg(majorDept, majorDims, 'major_scores');
+  const avgGen = generalAvg(genDims);
+
+  document.getElementById('major-dept-label').textContent = `(${majorDept})`;
+  if (selectedCodes.size === 0){
+    document.getElementById('major-score-bars').innerHTML = '<div style="font-size:13px;color:var(--text3);text-align:center;padding:18px">Add courses to your portfolio to see your skill profile.</div>';
+    document.getElementById('gen-score-bars').innerHTML = '';
+    document.getElementById('portfolio-insight').style.display='none';
+    renderProfileSummary([], {}, [], {});
+    return;
+  }
+  renderScoreBars('major-score-bars', majorDims, myMajor, avgMajor, 'major');
+  renderScoreBars('gen-score-bars', genDims, myGen, avgGen, 'gen');
+  renderProfileSummary(majorDims, myMajor, genDims, myGen);
+  renderInsight(majorDims, myMajor, avgMajor, genDims, myGen);
+}
+
+function renderInsight(mDims, mScores, mAvg, gDims, gScores){
+  const all = [...mDims.map(d => ({d, s:mScores[d.id]||0, a:mAvg[d.id]||0, type:'major'})),
+               ...gDims.map(d => ({d, s:gScores[d.id]||0, a:0, type:'general'}))];
+  all.sort((a,b) => b.s - a.s);
+  const top = all[0]; const bottom = all[all.length-1];
+  const aboveAvg = all.filter(x => x.type==='major' && x.s > x.a && x.a > 0);
+  const card = document.getElementById('portfolio-insight');
+  card.style.display = '';
+  let txt = `Your strongest skill is <strong>${dimLabel(top.d)}</strong> (${top.s} — ${maturity(top.s).label}).`;
+  if (aboveAvg.length) txt += ` You outperform the department average in <strong>${aboveAvg.length}</strong> major dimension${aboveAvg.length>1?'s':''}.`;
+  if (bottom.s < 25) txt += `<br>Your biggest growth area is <strong>${dimLabel(bottom.d)}</strong> (${bottom.s} — Exposure).`;
+  document.getElementById('insight-text').innerHTML = txt;
+
+  // Recommendations for the lowest dim
+  const gap = all.filter(x => x.s < 30 && x.type==='major')[0];
+  const gapEl = document.getElementById('insight-gap');
+  if (gap){
+    const recs = DATA.courses
+      .filter(c => c.dept===majorDept && !selectedCodes.has(c.code))
+      .map(c => ({c, s:(c.major_scores && c.major_scores[gap.d.id])||0}))
+      .filter(x => x.s > 30).sort((a,b)=>b.s-a.s).slice(0,3);
+    if (recs.length){
+      gapEl.style.display = '';
+      gapEl.innerHTML = `📈 To build <strong>${dimLabel(gap.d)}</strong>, consider: ` +
+        recs.map(r => `<strong>${r.c.code}</strong> (${r.s})`).join(' · ');
+    } else gapEl.style.display = 'none';
+  } else gapEl.style.display = 'none';
+}
+
+// ── Advisor ──
+function fillAdvisorSelects(){
+  const mDims = normDims(majorDept);
+  const gDims = normGenDims();
+  document.getElementById('adv-major').innerHTML =
+    `<option value="">— Select a major skill —</option>` +
+    mDims.map(d => `<option value="${d.id}">${d.id} — ${dimLabel(d)}</option>`).join('');
+  document.getElementById('adv-gen').innerHTML =
+    `<option value="">— Select a general skill —</option>` +
+    gDims.map(d => `<option value="${d.id}">${d.id} — ${dimLabel(d)}</option>`).join('');
+}
+function fillMatrixViewSelect(){
+  const sel = document.getElementById('matrix-view');
+  if (!sel) return;
+  // Collect departments with dimensions (after remapping: ACT, PSY, TRA, BIO, MAT, MGT, MKT, CSC, FIN, MIS, GE, PED)
+  const depts = Object.keys(DATA.departments).filter(d => {
+    const dims = normDims(d);
+    return dims && dims.length > 0;
+  });
+  let html = '<optgroup label="━━ Major Skills by Department ━━">';
+  depts.forEach(d => {
+    const dep = DATA.departments[d];
+    const name = (dep && (dep.name_en || dep.name)) || d;
+    const selected = d === majorDept ? ' selected' : '';
+    html += `<option value="${d}"${selected}>📊 ${d} — ${name}</option>`;
+  });
+  html += '</optgroup>';
+  html += '<optgroup label="━━ General Skills ━━">';
+  html += '<option value="gen">🌐 General Skills (9 dimensions)</option>';
+  html += '</optgroup>';
+  sel.innerHTML = html;
+}
+function renderAdvList(skill, key, listId){
+  const el = document.getElementById(listId);
+  if (!skill){ el.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:10px">Select a skill above</div>'; return; }
+  const depts = activeDeptSet();
+  const list = DATA.courses
+    .filter(c => depts.has(c.dept) && termMatch(c) && levelMatch(c) && !selectedCodes.has(c.code))
+    .map(c => ({c, s:(c[key] && c[key][skill])||0}))
+    .filter(x => x.s > 0).sort((a,b)=>b.s-a.s).slice(0, 8);
+  if (!list.length){ el.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:10px">No matching courses</div>'; return; }
+  el.innerHTML = list.map((x,i) => {
+    const m = maturity(x.s);
+    const col = DEPT_COLOR[x.c.dept] || 'var(--accent)';
+    return `<div class="adv-item" onclick="toggleCourse('${x.c.code}')">
+      <span class="adv-rank">${i+1}</span>
+      <div class="adv-info">
+        <div style="display:flex;gap:6px;align-items:center">
+          <span class="adv-code" style="color:${col}">${x.c.code}</span>
+          <span class="dept-badge" style="background:${col}">${x.c.dept}</span>
+          <span class="score-mt" style="background:${m.bg};color:${m.fg};font-size:9px">${m.label}</span>
+        </div>
+        <div class="adv-title">${x.c.title}</div>
+        <div class="adv-bar"><div class="adv-bar-fill" style="width:${x.s}%"></div></div>
+      </div>
+      <span class="adv-score">${x.s}</span>
+    </div>`;
+  }).join('');
+}
+function updateAdvisor(){ renderAdvList(document.getElementById('adv-major').value, 'major_scores', 'adv-major-list'); }
+function updateGenAdvisor(){ renderAdvList(document.getElementById('adv-gen').value, 'gen_scores', 'adv-gen-list'); }
+
+// ── Matrix ──
+function heat(v){
+  if (v >= 75) return `<span class="heat" style="background:var(--mt4-bg);color:var(--mt4-fg)">${v}</span>`;
+  if (v >= 55) return `<span class="heat" style="background:var(--mt3-bg);color:var(--mt3-fg)">${v}</span>`;
+  if (v >= 25) return `<span class="heat" style="background:var(--mt2-bg);color:var(--mt2-fg)">${v}</span>`;
+  if (v > 0)   return `<span class="heat" style="background:var(--mt1-bg);color:var(--mt1-fg)">${v}</span>`;
+  return `<span class="heat" style="background:#f3f4f6;color:#d1d5db">—</span>`;
+}
+function renderMatrix(){
+  const view = document.getElementById('matrix-view').value;
+  const depts = activeDeptSet();
+  let dims, key, courses;
+  let isDeptView = false; // true when viewing a single department's major skills
+
+  if (view === 'gen'){
+    // ── General Skills view ──
+    dims = normGenDims();
+    key = 'gen_scores';
+    courses = DATA.courses.filter(c => depts.has(c.dept) && termMatch(c) && levelMatch(c));
+  } else {
+    // ── Single-department Major Skills view ──
+    isDeptView = true;
+    dims = normDims(view);
+    key = 'major_scores';
+    courses = DATA.courses.filter(c => c.dept === view && termMatch(c) && levelMatch(c));
+  }
+
+  if (matrixSortCol){
+    courses = [...courses].sort((a,b) => {
+      if (matrixSortCol==='code') return matrixSortDir==='asc'?a.code.localeCompare(b.code):b.code.localeCompare(a.code);
+      if (matrixSortCol==='title') return matrixSortDir==='asc'?a.title.localeCompare(b.title):b.title.localeCompare(a.title);
+      const va = (a[key] && a[key][matrixSortCol])||0, vb = (b[key] && b[key][matrixSortCol])||0;
+      return matrixSortDir==='asc'?va-vb:vb-va;
+    });
+  }
+  // Limit rows for perf
+  courses = courses.slice(0, 250);
+
+  const arrow = col => matrixSortCol===col ? (matrixSortDir==='asc'?'↑':'↓') : '↕';
+  const thead = `<thead><tr>
+    <th onclick="sortMatrix('code')" style="min-width:90px">Code ${arrow('code')}</th>
+    <th onclick="sortMatrix('title')" style="min-width:200px">Title ${arrow('title')}</th>
+    ${isDeptView ? '' : '<th>Dept</th>'}
+    ${dims.map(d => `<th onclick="sortMatrix('${d.id}')" title="${dimLabel(d)}">${d.id} ${arrow(d.id)}</th>`).join('')}
+  </tr></thead>`;
+  const tbody = '<tbody>' + courses.map(c => {
+    const col = DEPT_COLOR[c.dept] || 'var(--accent)';
+    return `<tr>
+      <td style="font-weight:700;color:${col};white-space:nowrap;cursor:pointer" onclick="toggleCourse('${c.code}')">${c.code}</td>
+      <td style="max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${c.title}">${c.title}</td>
+      ${isDeptView ? '' : `<td><span class="dept-badge" style="background:${col}">${c.dept}</span></td>`}
+      ${dims.map(d => `<td>${heat((c[key] && c[key][d.id])||0)}</td>`).join('')}
+    </tr>`;
+  }).join('') + '</tbody>';
+  document.getElementById('matrix-table').innerHTML = thead + tbody;
+}
+function sortMatrix(col){
+  matrixSortDir = (matrixSortCol===col && matrixSortDir==='desc') ? 'asc' : 'desc';
+  matrixSortCol = col;
+  renderMatrix();
+}
+
+// ── Major dept select ──
+function fillMajorDeptSelect(){
+  const sel = document.getElementById('major-dept-select');
+  sel.innerHTML = ALL_DEPTS.map(d => {
+    const dep = DATA.departments[d];
+    const name = (dep && (dep.name_en || dep.name)) || d;
+    return `<option value="${d}" ${d===majorDept?'selected':''}>${d} — ${name}</option>`;
+  }).join('');
+  sel.onchange = () => { majorDept = sel.value; saveState(); fillAdvisorSelects(); renderCharts(); updateAdvisor(); };
+}
+
+// ── Transcript import / export ──
+let __pdfjsLibPromise = null;
+
+async function loadPdfJs(){
+  if (window.pdfjsLib) return window.pdfjsLib;
+  if (!__pdfjsLibPromise){
+    __pdfjsLibPromise = import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs')
+      .then(mod => {
+        mod.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs';
+        window.pdfjsLib = mod;
+        return mod;
+      });
+  }
+  return __pdfjsLibPromise;
+}
+
+function transcriptTermToSem(termLabel){
+  const m = String(termLabel || '').match(/^(\d{4})-(\d{2})\s+(Term\s*1|Term\s*2|Summer)$/i);
+  if (!m) return 'F24';
+  const y1 = String(parseInt(m[1], 10) % 100).padStart(2, '0');
+  const y2 = String(parseInt(m[2], 10)).padStart(2, '0');
+  const t = m[3].toLowerCase();
+  if (t.indexOf('term 1') !== -1) return 'F' + y1;
+  return 'S' + y2;
+}
+
+async function extractPdfTranscriptText(file){
+  const pdfjs = await loadPdfJs();
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjs.getDocument({ data: buf }).promise;
+  const pages = Math.min(pdf.numPages, 20);
+  let fullText = '';
+  for (let p = 1; p <= pages; p++){
+    const page = await pdf.getPage(p);
+    const textContent = await page.getTextContent();
+    const rows = {};
+    textContent.items.forEach(it => {
+      const y = Math.round((it.transform && it.transform[5]) || 0);
+      if (!rows[y]) rows[y] = [];
+      rows[y].push({
+        x: (it.transform && it.transform[4]) || 0,
+        str: String(it.str || ''),
+        eol: !!it.hasEOL
+      });
+    });
+    Object.keys(rows)
+      .map(Number)
+      .sort((a, b) => b - a)
+      .forEach(y => {
+        const line = rows[y]
+          .sort((a, b) => a.x - b.x)
+          .map(c => c.str + (c.eol ? '\n' : ' '))
+          .join('')
+          .replace(/[ \t]+/g, ' ')
+          .trim();
+        if (line) fullText += line + '\n';
+      });
+    fullText += '\n';
+  }
+  return fullText;
+}
+
+function parseCuhkTranscriptText(text){
+  const out = {
+    studentName: null,
+    studentId: null,
+    major: null,
+    stream: null,
+    college: null,
+    school: null,
+    admittedIn: null,
+    modeOfStudy: null,
+    termSummaries: {},
+    summary: { totalUnitsPassed: null, cumulativeGPA: null, majorGPA: null },
+    courses: []
+  };
+  if (!text) return out;
+
+  const cleaned = String(text).replace(/[\u00A0\u2007\u202F]/g, ' ').replace(/\r/g, '');
+  const colSplit = cleaned.replace(/[ \t]{2,}/g, '\n');
+  const lines = colSplit.split('\n').map(l => l.replace(/[ \t]+/g, ' ').trim()).filter(Boolean);
+  const flat = lines.join('\n');
+
+  function pluck(label){
+    let m = flat.match(new RegExp('(?:^|\\n)\\s*' + label + '\\s*[:\\-]\\s*([^\\n]+)', 'i'));
+    if (m) return m[1].trim();
+    m = flat.match(new RegExp('(?:^|\\n)\\s*' + label + '\\s*[:\\-]?\\s*\\n\\s*([^\\n]+)', 'i'));
+    return m ? m[1].trim() : null;
+  }
+
+  const nameMatch = flat.match(/(?:^|\n)Name\s*:\s*([^\n]+?)(?:\n|Chinese Name|Student ID|ID\/Passport|$)/i);
+  if (nameMatch) out.studentName = nameMatch[1].trim().replace(/\s+/g, ' ');
+  const idMatch = flat.match(/Student\s*ID\s*No\.?\s*[:\-]?\s*(\d{8,12})/i) || flat.match(/(?:^|\s)(1\d{8})(?:\s|$)/m);
+  if (idMatch) out.studentId = idMatch[1];
+  out.major = pluck('Major\\s*\\/\\s*Programme') || pluck('Major') || null;
+  out.stream = pluck('Stream\\(s\\)') || pluck('Stream') || null;
+  out.college = pluck('College') || null;
+  out.school = pluck('School') || null;
+  out.admittedIn = pluck('Admitted in') || null;
+  out.modeOfStudy = pluck('Mode of Study') || null;
+
+  const termHeader = /^(\d{4})\s*[\-–—−]\s*(\d{2,4})\s+Term\s*([12])\s*$/i;
+  const gradeAlt = '(?:A-|A|B\\+|B-|B|C\\+|C-|C|D\\+|D|F|PA|P|DI|FA|U|W|IP|NR|I)';
+  const courseRow = new RegExp(
+    '^([A-Z]{2,4}\\d{3,4}[A-Z]?)\\s+([A-Za-z][A-Za-z &,\\-\'\\(\\):\\/]+?)\\s+(\\d+\\.\\d)\\s+(' + gradeAlt + ')(?:\\s+(N\\/A|\\d+\\.\\d+))?\\s*$'
+  );
+  const courseRowLoose = new RegExp('^([A-Z]{2,4}\\d{3,4}[A-Z]?)\\s+(.+?)\\s+(\\d+\\.\\d)\\s+(' + gradeAlt + ')\\b');
+  const codeTitleOnlyRow = /^([A-Z]{2,4}\d{3,4}[A-Z]?)\s+([A-Za-z].+)$/;
+  const creditGradeRow = new RegExp('^(\\d+\\.\\d)\\s+(' + gradeAlt + ')(?:\\s+(N\\/A|\\d+\\.\\d+))?\\s*$', 'i');
+
+  const seen = new Set();
+  let currentTerm = '';
+  for (let i = 0; i < lines.length; i++){
+    const line = lines[i];
+    const th = line.match(termHeader);
+    if (th){
+      const y1 = th[1];
+      const y2 = th[2].length === 2 ? (th[1].slice(0, 2) + th[2]) : th[2];
+      currentTerm = y1 + '-' + y2.slice(-2) + ' Term ' + th[3];
+      continue;
+    }
+
+    if (currentTerm){
+      const slot = out.termSummaries[currentTerm] || (out.termSummaries[currentTerm] = {});
+      let m = line.match(/Units?\s*Passed\s*[:=\-]?\s*(\d+(?:\.\d+)?)/i);
+      if (m && slot.unitsPassed == null) slot.unitsPassed = Number(m[1]);
+      m = line.match(/Cumulative\s*Units?\s*Passed\s*[:=\-]?\s*(\d+(?:\.\d+)?)/i);
+      if (m && slot.cumulativeUnits == null) slot.cumulativeUnits = Number(m[1]);
+      m = line.match(/Term\s*G\.?\s*P\.?\s*A\.?\s*[:=\-]?\s*(\d+(?:\.\d+)?)/i);
+      if (m && slot.termGPA == null) slot.termGPA = Number(m[1]);
+      m = line.match(/Cumulative\s*G\.?\s*P\.?\s*A\.?\s*[:=\-]?\s*(\d+(?:\.\d+)?)/i);
+      if (m && slot.cumulativeGPA == null) slot.cumulativeGPA = Number(m[1]);
+    }
+
+    let cm = line.match(courseRow);
+    let code = null, title = null, credit = null, grade = null, advanceTo = i;
+    if (cm){
+      code = cm[1]; title = cm[2]; credit = Number(cm[3]); grade = cm[4].toUpperCase();
+    } else if ((cm = line.match(courseRowLoose))){
+      code = cm[1]; title = cm[2].replace(/\s+\d[\d\.\s]*$/, '').trim(); credit = Number(cm[3]); grade = cm[4].toUpperCase();
+    } else {
+      let ct = line.match(codeTitleOnlyRow);
+      if (ct){
+        const titleParts = [ct[2].trim()];
+        let foundCredit = null, foundGrade = null;
+        let j = i + 1;
+        while (j < lines.length && (j - i) <= 6){
+          const lj = lines[j];
+          if (/^[A-Z]{2,4}\d{3,4}[A-Z]?$/.test(lj) || termHeader.test(lj)) break;
+          if (/Term\s*GPA|Cumulative\s*GPA|Units?\s*Passed|Summary|Honour|Award/i.test(lj)) break;
+          let cg = lj.match(creditGradeRow);
+          if (cg && foundCredit == null){
+            foundCredit = Number(cg[1]);
+            foundGrade = String(cg[2] || '').toUpperCase();
+            j++;
+            break;
+          }
+          if (/^N\/?A$|^\d+\.\d+$/i.test(lj)) {}
+          else if (/^[A-Za-z][A-Za-z &,\-'():\/]+$/.test(lj) && foundCredit == null) titleParts.push(lj);
+          j++;
+        }
+        if (foundCredit != null && foundGrade){
+          code = ct[1];
+          title = titleParts.join(' ');
+          credit = foundCredit;
+          grade = foundGrade;
+          advanceTo = j - 1;
+        } else {
+          continue;
+        }
+      } else {
+      const codeOnly = line.match(/^([A-Z]{2,4}\d{3,4}[A-Z]?)$/);
+      if (!codeOnly) continue;
+      const titleParts = [];
+      const gradeRe = new RegExp('^' + gradeAlt + '$', 'i');
+      let foundCredit = null, foundGrade = null;
+      let j = i + 1;
+      while (j < lines.length && (j - i) <= 6){
+        const lj = lines[j];
+        if (/^[A-Z]{2,4}\d{3,4}[A-Z]?$/.test(lj) || termHeader.test(lj)) break;
+        if (/Term\s*GPA|Cumulative\s*GPA|Units?\s*Passed|Summary|Honour|Award/i.test(lj)) break;
+        if (/^\d+\.\d$/.test(lj) && foundCredit == null) foundCredit = Number(lj);
+        else if (gradeRe.test(lj) && foundGrade == null) foundGrade = lj.toUpperCase();
+        else if (/^N\/?A$|^\d+\.\d+$/i.test(lj)) {}
+        else if (/^[A-Za-z][A-Za-z &,\-'():\/]+$/.test(lj) && foundCredit == null) titleParts.push(lj);
+        j++;
+        if (foundCredit != null && foundGrade != null) break;
+      }
+      if (foundCredit == null || foundGrade == null || !titleParts.length) continue;
+      code = codeOnly[1];
+      title = titleParts.join(' ');
+      credit = foundCredit;
+      grade = foundGrade;
+      advanceTo = j - 1;
+      }
+    }
+
+    const courseCode = String(code || '').toUpperCase().replace(/^([A-Z]+)(\d)/, '$1 $2').replace(/\s+/g, ' ').trim();
+    if (!courseCode) continue;
+    const key = (currentTerm || '-') + '|' + courseCode + '|' + grade;
+    if (seen.has(key)){ i = advanceTo; continue; }
+    seen.add(key);
+    out.courses.push({
+      courseCode,
+      courseName: String(title || courseCode).replace(/\s+/g, ' ').trim(),
+      credit: Number(credit || 0),
+      letterGrade: String(grade || '').toUpperCase(),
+      term: currentTerm || '',
+      confidence: 0.95
+    });
+    i = advanceTo;
+  }
+
+  const summaryBlock = (() => {
+    const m = flat.match(/\bSummary\b(?![\s\S]*\bSummary\b)/i);
+    return m ? flat.slice(m.index) : flat.slice(-1500);
+  })();
+  let m = summaryBlock.match(/Total\s*Units?\s*Passed\s*[:\-]?\s*(\d+(?:\.\d+)?)/i);
+  if (m) out.summary.totalUnitsPassed = Number(m[1]);
+  m = summaryBlock.match(/(?:Cumulative|mulative)\s*G\.?\s*P\.?\s*A\.?\s*[:\-]?\s*(\d+(?:\.\d+)?)(?:\s*\/\s*4(?:\.0+)?)?/i);
+  if (m) out.summary.cumulativeGPA = Number(m[1]);
+  m = summaryBlock.match(/Major\s*G\.?\s*P\.?\s*A\.?\s*[:\-]?\s*(\d+(?:\.\d+)?)(?:\s*\/\s*4(?:\.0+)?)?/i);
+  if (m) out.summary.majorGPA = Number(m[1]);
+  if (out.summary.cumulativeGPA == null || out.summary.majorGPA == null){
+    const tableRow = summaryBlock.match(/CUHK\(SZ\)\s+\d+(?:\.\d+)?\s+(\d+(?:\.\d+)?)\/4(?:\.0+)?\s+(\d+(?:\.\d+)?)\/4(?:\.0+)?/i);
+    if (tableRow){
+      if (out.summary.cumulativeGPA == null) out.summary.cumulativeGPA = Number(tableRow[1]);
+      if (out.summary.majorGPA == null) out.summary.majorGPA = Number(tableRow[2]);
+    }
+  }
+  if (out.summary.totalUnitsPassed == null){
+    const lastCum = flat.match(/Cumulative\s*Units?\s*Passed\s*[:=\-]?\s*(\d+(?:\.\d+)?)(?![\s\S]*Cumulative\s*Units?\s*Passed)/i);
+    if (lastCum) out.summary.totalUnitsPassed = Number(lastCum[1]);
+  }
+
+  return out;
+}
+
+async function importTranscriptFromPdf(file){
+  const text = await extractPdfTranscriptText(file);
+  const parsed = parseCuhkTranscriptText(text);
+  let parsedRows = (parsed.courses || []).map(c => ({
+    semester: transcriptTermToSem(c.term),
+    transcriptTerm: c.term || '',
+    code: String(c.courseCode || '').toUpperCase().replace(/\s+/g, ' ').replace(/^([A-Z]+)(\d)/, '$1 $2'),
+    title: c.courseName || '',
+    grade: String(c.letterGrade || '').toUpperCase(),
+    credit: Number(c.credit || 0)
+  }));
+  if (!parsedRows.length){
+    // last fallback: at least import detected course codes
+    const codeHits = Array.from(new Set((String(text).match(/\b[A-Z]{2,4}\s?\d{4}[A-Z]?\b/g) || [])
+      .map(c => c.toUpperCase().replace(/\s+/g, ' ').replace(/^([A-Z]+)(\d)/, '$1 $2'))));
+    parsedRows = codeHits.map(c => ({ semester: 'F24', transcriptTerm: '', code: c, title: c, grade: '' }));
+  }
+  if (!parsedRows.length){
+    throw new Error('No transcript course rows were detected in the PDF.');
+  }
+
+  let added = 0, gradesAdded = 0, matched = 0;
+  parsedRows.forEach(r => {
+    const found = DATA.courses.find(c => c.code === r.code);
+    if (found){
+      matched++;
+      if (!selectedCodes.has(found.code)){
+        selectedCodes.add(found.code);
+        added++;
+      }
+      if ((GRADE_VAL[r.grade] != null) && !gpaRecords.some(g => g.sem === r.semester && g.code === found.code && g.grade === r.grade)){
+        gpaRecords.push({ sem: r.semester, code: found.code, grade: r.grade });
+        gradesAdded++;
+      }
+    }
+  });
+
+  // Sync major selector from transcript when we can infer a known department code.
+  const majorHint = String(parsed.major || parsed.stream || '').toUpperCase();
+  const inferredDept = ALL_DEPTS.find(d => {
+    if (!d || d === 'GE' || d === 'PED') return false;
+    const dep = DATA.departments[d] || {};
+    const depName = String(dep.name_en || dep.name || '').toUpperCase();
+    return majorHint.includes(d) || (depName && majorHint.includes(depName));
+  });
+  if (inferredDept && DATA.departments[inferredDept]){
+    majorDept = inferredDept;
+  }
+
+  const totalUnits =
+    parsed.summary.totalUnitsPassed != null
+      ? parsed.summary.totalUnitsPassed
+      : parsedRows.reduce((s, r) => s + (Number(r.credit) || 0), 0);
+  const latestGpa = parsed.summary.cumulativeGPA != null
+    ? parsed.summary.cumulativeGPA
+    : (() => {
+      const vals = Object.values(parsed.termSummaries || {})
+        .map(v => Number(v && v.cumulativeGPA))
+        .filter(v => Number.isFinite(v));
+      return vals.length ? vals[vals.length - 1] : null;
+    })();
+
+  alert(
+    `PDF parsed ${parsedRows.length} rows · matched ${matched} catalog courses · imported ${added} courses` +
+    (gradesAdded ? `, ${gradesAdded} grades` : '') +
+    (totalUnits ? ` · units ${totalUnits}` : '') +
+    (latestGpa != null ? ` · cumulative GPA ${latestGpa.toFixed(3)}` : '') +
+    (parsed.studentName ? `\nStudent: ${parsed.studentName}` : '') +
+    (parsed.studentId ? ` (${parsed.studentId})` : '') +
+    '.'
+  );
+}
+
+function importTranscript(ev){
+  const file = ev.target.files[0];
+  if (!file) return;
+  const lowerName = String(file.name || '').toLowerCase();
+  if (lowerName.endsWith('.pdf')){
+    importTranscriptFromPdf(file)
+      .then(() => { renderAll(); saveState(); })
+      .catch(err => { alert('Failed to parse PDF transcript: ' + err.message); })
+      .finally(() => { ev.target.value = ''; });
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, {type:'binary'});
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, {header:1});
+      let added = 0, gradesAdded = 0;
+      rows.forEach(r => {
+        if (!r || !r.length) return;
+        const code = String(r[0]||'').trim().toUpperCase();
+        if (!code || !/[A-Z]{2,4}\s*\d{3,4}/.test(code)) return;
+        const normCode = code.replace(/\s+/g,' ').replace(/^([A-Z]+)(\d)/, '$1 $2');
+        const found = DATA.courses.find(c => c.code === normCode);
+        if (found && !selectedCodes.has(found.code)){
+          selectedCodes.add(found.code);
+          added++;
+          // grade column
+          const grade = String(r[2]||r[1]||'').trim();
+          if (/^(A\+?|A-|B\+?|B-?|C\+?|C-?|D\+?|D|F)$/i.test(grade)){
+            const sem = String(r[3]||'F24').trim() || 'F24';
+            gpaRecords.push({sem, code:found.code, grade:grade.toUpperCase()});
+            gradesAdded++;
+          }
+        }
+      });
+      alert(`Imported ${added} courses` + (gradesAdded?`, ${gradesAdded} grades`:'') + '. (Format: Code | Title | Grade | Semester)');
+      renderAll(); saveState();
+    } catch(err){ alert('Failed to read file: ' + err.message); }
+  };
+  reader.readAsBinaryString(file);
+  ev.target.value = '';
+}
+function exportPortfolio(){
+  if (selectedCodes.size === 0){ alert('Add courses to your portfolio first.'); return; }
+  const sel = DATA.courses.filter(c => selectedCodes.has(c.code));
+  const majorDims = normDims(majorDept);
+  const genDims = normGenDims();
+  const myMajor = aggregateScores(majorDims, 'major_scores');
+  const myGen = aggregateScores(genDims, 'gen_scores');
+  // Sheet 1: courses + scores
+  const courseRows = sel.map(c => {
+    const row = {Code:c.code, Title:c.title, Dept:c.dept, Credit:c.credit||3, Offered:(c.offered||[]).join('/'), Level:c.level||'-'};
+    Object.entries(c.major_scores||{}).forEach(([k,v]) => row['M_'+k] = v);
+    Object.entries(c.gen_scores||{}).forEach(([k,v]) => row['G_'+k] = v);
+    return row;
+  });
+  // Sheet 2: aggregate skill profile
+  const profileRows = [
+    ['Skill Type','Skill ID','Skill Name','My Score','Maturity'],
+    ...majorDims.map(d => ['Major', d.id, dimLabel(d), myMajor[d.id]||0, maturity(myMajor[d.id]||0).label]),
+    ...genDims.map(d => ['General', d.id, dimLabel(d), myGen[d.id]||0, maturity(myGen[d.id]||0).label]),
+  ];
+  // Sheet 3: GPA records
+  const gpaRows = [['Semester','Code','Grade','GPA Points']].concat(
+    gpaRecords.map(g => [g.sem, g.code, g.grade, gradeToGPA(g.grade)])
+  );
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(courseRows), 'Courses');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(profileRows), 'Skill Profile');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(gpaRows), 'Grades');
+  XLSX.writeFile(wb, `portfolio_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+// ── GPA scale ── A 4.0 · A- 3.7 · B+ 3.3 · B 3.0 · B- 2.7 · C+ 2.4 · C 2.0 · C- 1.7 · D+ 1.3 · D 1.0 · F 0
+const GRADE_VAL = {'A':4.0,'A-':3.7,'B+':3.3,'B':3.0,'B-':2.7,'C+':2.4,'C':2.0,'C-':1.7,'D+':1.3,'D':1.0,'F':0.0};
+const GRADE_ORDER = ['F','D','D+','C-','C','C+','B-','B','B+','A-','A'];
+// Y-axis tick values for the GPA chart (descending, displayed top-to-bottom)
+const GPA_TICKS = [4.0, 3.7, 3.3, 3.0, 2.7, 2.4, 2.0];
+// Map a numeric GPA to its closest letter grade for display purposes
+function gpaToLetter(g){
+  let best='', bestD=Infinity;
+  GRADE_ORDER.forEach(k => { const v=GRADE_VAL[k]; const d=Math.abs(v-g); if(d<bestD){bestD=d;best=k;}});
+  return best;
+}
+function gradeToGPA(g){ return GRADE_VAL[g] ?? 0; }
+// Map any numeric GPA (0–4) to the nearest GRADE_ORDER index
+function gpaToIdx(gpa){
+  let best = 0, bestD = Infinity;
+  GRADE_ORDER.forEach((g, i) => {
+    const v = GRADE_VAL[g] ?? 0;
+    const d = Math.abs(v - gpa);
+    if (d < bestD){ bestD = d; best = i; }
+  });
+  return best;
+}
+function semSortValue(sem, fallback){
+  const s = String(sem || '').trim().toUpperCase();
+  // F23 / S24 / SUM24
+  let m = s.match(/^([FS])\s*(\d{2})$/);
+  if (m){
+    const yy = parseInt(m[2], 10);
+    const term = m[1] === 'F' ? 0 : 2; // Fall=0, Spring(next year)=2 (we use yy*3 below)
+    return yy * 3 + term;
+  }
+  m = s.match(/^SUM\s*(\d{2})$/);
+  if (m){
+    const yy = parseInt(m[1], 10);
+    return yy * 3 + 1; // summer is between spring (yy-prev=2 in prev year) and fall — treat as mid-year
+  }
+  m = s.match(/^(\d{4})-(\d{2})\s*TERM\s*([12])$/i);
+  if (m){
+    const y = parseInt(m[1], 10);
+    const term = String(m[3]) === '1' ? 0 : 2;
+    return (y % 100) * 3 + term;
+  }
+  return 100000 + (fallback || 0);
+}
+// Display label: F24 → FAL 24, S25 → SPR 25, SUM24 → SUM 24
+function semDisplayLabel(sem){
+  const s = String(sem || '').trim().toUpperCase();
+  let m = s.match(/^F(\d{2})$/); if (m) return `FAL ${m[1]}`;
+  m = s.match(/^S(\d{2})$/);     if (m) return `SPR ${m[1]}`;
+  m = s.match(/^SUM\s*(\d{2})$/); if (m) return `SUM ${m[1]}`;
+  return s;
+}
+
+function addGrade(){
+  const sem = document.getElementById('g-sem').value;
+  let code = (document.getElementById('g-code').value || '').trim().toUpperCase();
+  // Normalize: "MAT1001" → "MAT 1001"
+  code = code.replace(/^([A-Z]+)\s*(\d)/, '$1 $2').replace(/\s+/g, ' ');
+  const grade = document.getElementById('g-grade').value;
+  if (!code){ alert('Please type or pick a course code first (e.g. "MAT 1001"). The dropdown shows all available courses.'); return; }
+  gpaRecords.push({sem, code, grade});
+  document.getElementById('g-code').value = '';
+  // Auto-add the course to portfolio if found
+  const c = DATA.courses.find(x => x.code === code);
+  if (c) selectedCodes.add(c.code);
+  renderAll(); saveState();
+}
+function removeGrade(i){ gpaRecords.splice(i,1); renderAll(); saveState(); }
+function clearGrades(){ if(confirm('Clear all grade records?')){ gpaRecords = []; renderAll(); saveState(); } }
+function loadDemoGrades(){
+  gpaRecords = [
+    {sem:'F23',code:'MAT 1001',grade:'B+'},
+    {sem:'F23',code:'GEC 1000',grade:'A-'},
+    {sem:'S24',code:'MAT 1002',grade:'A-'},
+    {sem:'S24',code:'ACT 2111',grade:'B+'},
+    {sem:'F24',code:'ACT 2121',grade:'A'},
+    {sem:'F24',code:'FIN 2010',grade:'A-'},
+    {sem:'F24',code:'CSC 1001',grade:'B+'},
+    {sem:'S25',code:'ACT 3111',grade:'A'},
+    {sem:'S25',code:'ACT 3151',grade:'A-'},
+  ];
+  // also add to portfolio
+  gpaRecords.forEach(g => {
+    const c = DATA.courses.find(x => x.code === g.code);
+    if (c) selectedCodes.add(c.code);
+  });
+  renderAll(); saveState();
+}
+function renderGPAList(){
+  const el = document.getElementById('gpa-list');
+  if (!gpaRecords.length){ el.innerHTML = '<div style="text-align:center;color:var(--text3);padding:14px;font-size:12px">No grades yet. Type a course code above, pick a grade, and click + Add Grade.</div>'; return; }
+  // Sort by semester (chronological), then by code — keep original index for removal
+  const indexed = gpaRecords.map((g, i) => ({...g, _i: i}));
+  indexed.sort((a,b) => {
+    const d = semSortValue(a.sem, a._i) - semSortValue(b.sem, b._i);
+    return d || String(a.code).localeCompare(String(b.code));
+  });
+  el.innerHTML = indexed.map(g =>
+    `<div class="row"><span><b>${semDisplayLabel(g.sem)}</b> &nbsp; ${g.code}</span><span><span class="rg">${g.grade}</span> <span class="rx" data-rmidx="${g._i}" role="button" title="Remove">×</span></span></div>`
+  ).join('');
+}
+function renderGPAChart(){
+  if (gpaChart){ gpaChart.destroy(); gpaChart = null; }
+  const ctx = document.getElementById('gpa-chart').getContext('2d');
+  if (!gpaRecords.length){
+    ctx.clearRect(0,0,ctx.canvas.width, ctx.canvas.height);
+    document.getElementById('gpa-stats').textContent = 'CGPA: — · Latest sem: —';
+    return;
+  }
+  // Group by semester (dynamic chronological ordering from actual records)
+  const semGroups = {};
+  const semFirstSeen = {};
+  gpaRecords.forEach((g, i) => {
+    const sem = String(g.sem || '').trim().toUpperCase();
+    if (!(sem in semFirstSeen)) semFirstSeen[sem] = i;
+    (semGroups[sem] = semGroups[sem] || []).push({...g, sem});
+  });
+  const sems = Object.keys(semGroups).sort((a, b) => semSortValue(a, semFirstSeen[a]) - semSortValue(b, semFirstSeen[b]));
+  const semIdx = {};
+  sems.forEach((s, i) => { semIdx[s] = i; });
+  const byCourse = gpaRecords
+    .map((g, i) => ({...g, sem: String(g.sem || '').trim().toUpperCase(), __i: i}))
+    .sort((a, b) => {
+      const d = semSortValue(a.sem, a.__i) - semSortValue(b.sem, b.__i);
+      return d || (a.__i - b.__i);
+    });
+
+  // Each course = a point at its grade's GPA value
+  const coursePoints = byCourse.map(g => ({x:semIdx[g.sem], y:gradeToGPA(g.grade), label:`${g.code}: ${g.grade} (${gradeToGPA(g.grade).toFixed(1)})`}));
+  // Semester GPA = average of grade points (4.0 scale)
+  const semGPA = sems.map((s,i) => {
+    const arr = semGroups[s];
+    const gpa = arr.reduce((sum,g)=>sum+gradeToGPA(g.grade),0)/arr.length;
+    return {x:i, y:gpa, gpa:gpa.toFixed(2)};
+  });
+  // CGPA (overall) and goal
+  const cgpaVal = byCourse.reduce((s,g)=>s+gradeToGPA(g.grade),0)/byCourse.length;
+  const goal = parseFloat(document.getElementById('goal-gpa').value) || 3.5;
+
+  document.getElementById('gpa-stats').innerHTML = `<b>CGPA</b>: <b style="color:var(--accent)">${cgpaVal.toFixed(2)}</b> &nbsp;·&nbsp; <b>Latest sem</b>: <b style="color:var(--accent)">${semDisplayLabel(sems[sems.length-1])}</b>`;
+
+  gpaChart = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels: sems,
+      datasets:[
+        {label:'Course Grades (each dot = one course)', type:'scatter', data:coursePoints,
+          backgroundColor:'#6baed6', borderColor:'#2171b5', pointRadius:5, pointHoverRadius:7, showLine:false},
+        {label:'Semester GPA', type:'line', data:semGPA,
+          backgroundColor:'#2171b5', borderColor:'#2171b5', borderWidth:3, pointRadius:5, pointBackgroundColor:'#2171b5', tension:.25, fill:false},
+        {label:`Current CGPA (${cgpaVal.toFixed(2)})`, type:'line', data:sems.map((s,i)=>({x:i,y:cgpaVal})),
+          backgroundColor:'#08306b', borderColor:'#08306b', borderWidth:2.5, pointRadius:0, borderDash:[]},
+        {label:`Goal CGPA (${goal.toFixed(2)})`, type:'line', data:sems.map((s,i)=>({x:i,y:goal})),
+          backgroundColor:'#dc2626', borderColor:'#dc2626', borderWidth:2.5, pointRadius:0, borderDash:[8,4]}
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      scales:{
+        x:{type:'linear', min:-0.3, max:sems.length-0.7,
+           ticks:{callback:(v)=>semDisplayLabel(sems[Math.round(v)]||''), stepSize:1, font:{size:13, weight:'700'}, color:'#1a1d2e'},
+           title:{display:true,text:'Semester',font:{size:12,weight:'600'},color:'#5a6076',padding:{top:6}}},
+        y:{min:1.9, max:4.1,
+           afterBuildTicks: (axis) => { axis.ticks = GPA_TICKS.map(v => ({value:v})); },
+           ticks:{
+             callback:(v) => Number(v).toFixed(1),
+             font:{size:13, weight:'700'}, color:'#1a1d2e', autoSkip:false
+           },
+           title:{display:true,text:'GPA',font:{size:13,weight:'700'},color:'#5a6076'}}
+      },
+      plugins:{
+        legend:{
+          position:'bottom', align:'center',
+          labels:{
+            font:{size:13, weight:'700'}, color:'#1a1d2e',
+            padding:18, boxWidth:32, boxHeight:2,
+            usePointStyle:true, pointStyle:'line', pointStyleWidth:36
+          }
+        },
+        tooltip:{callbacks:{
+          label:(ctx)=>{
+            if (ctx.dataset.label.startsWith('Course Grades')) return ctx.raw.label;
+            if (ctx.dataset.label === 'Semester GPA') return `Sem GPA: ${ctx.raw.gpa}`;
+            return ctx.dataset.label;
+          }
+        }}
+      }
+    }
+  });
+}
+
+// ── Render all (lightweight — matrix renders lazily on filter / view change) ──
+function renderAll(){
+  renderCourseList();
+  renderBasket();
+  renderCharts();
+  updateAdvisor();
+  updateGenAdvisor();
+  renderGPAList();
+  renderGPAChart();
+  refreshGPACourseSelect();
+  // matrix is heavy (308 × ~99 cells) — defer it; only triggered by filter changes
+  if (!renderMatrixScheduled){
+    renderMatrixScheduled = true;
+    requestAnimationFrame(() => { renderMatrix(); renderMatrixScheduled = false; });
+  }
+}
+
+// Populate the GPA datalist with all course codes (autocomplete suggestions)
+function refreshGPACourseSelect(){
+  const dl = document.getElementById('g-code-list'); if(!dl) return;
+  // All course codes — datalist filters as user types
+  dl.innerHTML = DATA.courses.map(c => `<option value="${c.code}">${c.title.slice(0,50)}</option>`).join('');
+}
+
+// ── Global error overlay (so JS errors are visible, not silent) ──
+window.addEventListener('error', (e) => {
+  // Filter out harmless cross-origin errors from CDN scripts (no useful info anyway)
+  const msg = e.message || '';
+  if (/^Script error\.?$/i.test(msg) || msg === 'unknown') return;
+  const banner = document.createElement('div');
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#dc2626;color:#fff;padding:10px 16px;font:600 12px/1.4 system-ui;z-index:99999;box-shadow:0 2px 8px rgba(0,0,0,.3)';
+  banner.textContent = '⚠️ JS Error: ' + msg + ' @ ' + (e.filename||'').split('/').pop() + ':' + e.lineno;
+  document.body.appendChild(banner);
+  setTimeout(() => banner.remove(), 8000);
+});
+
+// Safe wrapper — surface errors visually
+function safe(fn, label){
+  return function(...args){
+    try { return fn.apply(this, args); }
+    catch(err){
+      console.error('['+label+']', err);
+      alert('Error in ' + label + ': ' + err.message);
+    }
+  };
+}
+
+// ── Wire all buttons via addEventListener (no inline handlers, never silent) ──
+function wireButtons(){
+  const map = [
+    ['add-grade-btn', 'click', addGrade],
+    ['clear-grades-btn', 'click', clearGrades]
+  ];
+  map.forEach(([id, ev, fn]) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener(ev, safe(fn, id));
+    else console.warn('Button not found:', id);
+  });
+  // GPA list — delegate remove clicks
+  const list = document.getElementById('gpa-list');
+  if (list){
+    list.addEventListener('click', (e) => {
+      const rx = e.target.closest('[data-rmidx]');
+      if (rx){
+        const idx = parseInt(rx.dataset.rmidx, 10);
+        if (!isNaN(idx)) safe(removeGrade, 'removeGrade')(idx);
+      }
+    });
+  }
+  // Allow Enter key in g-code input to add the grade
+  const codeInput = document.getElementById('g-code');
+  if (codeInput){
+    codeInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter'){ e.preventDefault(); safe(addGrade, 'addGrade')(); }
+    });
+  }
+}
+
+// ── i18n: EN / 简中 / 繁中 ──
+const I18N = {
+  'en': {
+    'nav.title':'Study Dashboard','nav.home':'Home','nav.guide':'Guide','nav.signout':'Sign out',
+    'filter.schools':'🗂️ Course Category','filter.all':'All','filter.term':'Term:','filter.level':'Level:',
+    'filter.any':'Any','filter.fall':'Fall','filter.spring':'Spring',
+    'card.portfolio':'🎒 Student Portfolio',
+    'card.skill':'📊 Skill Ability Profile',
+    'card.gpa':'📈 Grade Trajectory',
+    'card.advisor':'🎯 Skill Driven Recommendation',
+    'card.matrix':'🔍 Skill Matrix',
+    'card.matrix.sub':'All courses by all skills — click any column header to sort',
+    'ps.courses':'📚 Courses','ps.credits':'⭐ Credits','ps.avg':'🎓 Avg GPA','ps.top':'🏆 Top 3 Strengths',
+    'gpa.clear':'Clear','gpa.sub':'Track your letter grades, semester GPA, current CGPA, and goal GPA over time',
+    'gpa.add':'Add a grade','gpa.recorded':'Recorded grades (chronological)','gpa.addbtn':'＋ Add Grade',
+    'gpa.target':'🎯 Target CGPA','gpa.cgpa':'CGPA','gpa.lastsem':'Latest sem',
+    'skill.major':'Major Skills','skill.gen':'General Skills','skill.major.dept':'Major dept:',
+    'skill.major.sub':'9 specialized dimensions for the selected category · gray dot = your score · red mark = category average',
+    'skill.gen.sub':'9 cross-disciplinary competencies · PK is auto-computed as the average of your major skills',
+    'advisor.sub':'Pick a target skill — we’ll rank courses that build it most efficiently (filtered by your category + term selections)'
+  },
+  'zh-CN': {
+    'nav.title':'学习仪表盘','nav.home':'首页','nav.guide':'指南','nav.signout':'登出',
+    'filter.schools':'🗂️ 课程类别','filter.all':'全部','filter.term':'学期:','filter.level':'年级:',
+    'filter.any':'任意','filter.fall':'秋季','filter.spring':'春季',
+    'card.portfolio':'🎒 学生档案',
+    'card.skill':'📊 技能能力剖面',
+    'card.gpa':'📈 成绩轨迹',
+    'card.advisor':'🎯 技能驱动推荐',
+    'card.matrix':'🔍 技能矩阵',
+    'card.matrix.sub':'所有课程 × 所有技能 — 点击任意列标题排序',
+    'ps.courses':'📚 课程数','ps.credits':'⭐ 学分','ps.avg':'🎓 平均 GPA','ps.top':'🏆 三大优势',
+    'gpa.clear':'清空','gpa.sub':'追踪字母成绩、学期 GPA、当前 CGPA 和目标 GPA',
+    'gpa.add':'添加成绩','gpa.recorded':'已记录成绩（按时间）','gpa.addbtn':'＋ 添加',
+    'gpa.target':'🎯 目标 CGPA','gpa.cgpa':'CGPA','gpa.lastsem':'最近学期',
+    'skill.major':'专业技能','skill.gen':'通用技能','skill.major.dept':'专业方向:',
+    'skill.major.sub':'9 个选定类别的专业维度 · 灰点 = 你的得分 · 红线 = 类别均值',
+    'skill.gen.sub':'9 项跨学科能力 · PK 自动等于你专业技能的平均值',
+    'advisor.sub':'选择目标技能 — 系统按构建效率排序课程（受类别 + 学期筛选影响）'
+  },
+  'zh-TW': {
+    'nav.title':'學習儀表板','nav.home':'首頁','nav.guide':'指南','nav.signout':'登出',
+    'filter.schools':'🗂️ 課程類別','filter.all':'全部','filter.term':'學期:','filter.level':'年級:',
+    'filter.any':'任意','filter.fall':'秋季','filter.spring':'春季',
+    'card.portfolio':'🎒 學生檔案',
+    'card.skill':'📊 技能能力剖面',
+    'card.gpa':'📈 成績軌跡',
+    'card.advisor':'🎯 技能驅動推薦',
+    'card.matrix':'🔍 技能矩陣',
+    'card.matrix.sub':'所有課程 × 所有技能 — 點擊任意列標題排序',
+    'ps.courses':'📚 課程數','ps.credits':'⭐ 學分','ps.avg':'🎓 平均 GPA','ps.top':'🏆 三大優勢',
+    'gpa.clear':'清空','gpa.sub':'追蹤字母成績、學期 GPA、當前 CGPA 和目標 GPA',
+    'gpa.add':'新增成績','gpa.recorded':'已記錄成績（按時間）','gpa.addbtn':'＋ 新增',
+    'gpa.target':'🎯 目標 CGPA','gpa.cgpa':'CGPA','gpa.lastsem':'最近學期',
+    'skill.major':'專業技能','skill.gen':'通用技能','skill.major.dept':'專業方向:',
+    'skill.major.sub':'9 個所選類別的專業維度 · 灰點 = 你的得分 · 紅線 = 類別均值',
+    'skill.gen.sub':'9 項跨學科能力 · PK 自動等於你專業技能的平均值',
+    'advisor.sub':'選擇目標技能 — 系統按建構效率排序課程（受類別 + 學期篩選影響）'
+  }
+};
+function applyI18n(lang){
+  const dict = I18N[lang] || I18N['en'];
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.dataset.i18n; if (dict[k]) el.textContent = dict[k];
+  });
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+  try { localStorage.setItem('cuhksz_lang', lang); } catch(e){}
+  document.documentElement.lang = lang;
+}
+function initI18n(){
+  let lang = 'en';
+  try { lang = localStorage.getItem('cuhksz_lang') || 'en'; } catch(e){}
+  if (!I18N[lang]) lang = 'en';
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.addEventListener('click', () => applyI18n(b.dataset.lang));
+  });
+  applyI18n(lang);
+}
+
+// ── Init ──
+loadState();
+loadUser();
+renderSchoolChips();
+fillMajorDeptSelect();
+fillAdvisorSelects();
+fillMatrixViewSelect();
+bindBasketDrop();
+applyChartDefaults();
+wireButtons();
+renderAll();
+initI18n();
+console.log('[dashboard v8] Init OK — courses:', DATA.courses.length, '· depts:', ALL_DEPTS.join(','), '· selected:', selectedCodes.size);
+</script>
+</body>
+</html>

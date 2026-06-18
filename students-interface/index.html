@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Undergraduate Study Dashboard · Home</title>
+<link rel="icon" type="image/png" href="../assets/Image_20260513001106_704_33.png"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --purple:#0070e0;--accent:#009cde;--accent-dark:#0d57c6;
+  --bg:#f2f8ff;--surface:#fff;--border:#d8e6f7;
+  --text:#102a43;--text2:#486581;--text3:#829ab1;
+  --b1:#eef7ff;--b2:#cfe8ff;--b3:#8ac8f8;--b4:#009cde;
+}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+     background:var(--bg);color:var(--text);font-size:16px;line-height:1.5;overflow-x:hidden}
+
+/* Top bar */
+.top-bar{background:var(--purple);padding:14px 36px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100}
+.logo-box{width:42px;height:42px;background:rgba(255,255,255,.18);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.school-name{color:#fff;font-size:14px;font-weight:700;line-height:1.4}
+.school-name small{display:block;font-weight:400;opacity:.75;font-size:11.5px;margin-top:2px}
+.top-spacer{flex:1}
+.lang-toggle{display:inline-flex;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:20px;overflow:hidden;
+  backdrop-filter:blur(20px) saturate(1.8);-webkit-backdrop-filter:blur(20px) saturate(1.8);margin-right:14px}
+.lang-btn{padding:6px 14px;font-size:11.5px;font-weight:700;cursor:pointer;border:none;background:transparent;color:rgba(255,255,255,.7);transition:all .15s}
+.lang-btn:hover{background:rgba(255,255,255,.08);color:#fff}
+.lang-btn.active{background:rgba(255,255,255,.22);color:#fff}
+.top-logout{padding:7px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.24);background:rgba(255,255,255,.16);color:#fff;font-size:12px;font-weight:700;cursor:pointer}
+.top-logout:hover{background:rgba(255,255,255,.26)}
+
+/* HERO — full-screen on initial load */
+.hero{min-height:calc(100vh - 70px);display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:60px 32px 80px;position:relative;overflow:hidden;
+  background:linear-gradient(180deg, #f8fcff 0%, var(--bg) 100%)}
+.hero-bg::before, .hero-bg::after{content:'';position:absolute;border-radius:50%;filter:blur(80px);opacity:.4;animation:floaty 16s ease-in-out infinite}
+.hero-bg::before{width:420px;height:420px;background:radial-gradient(circle, var(--b3) 0%, transparent 70%);top:10%;left:8%}
+.hero-bg::after{width:520px;height:520px;background:radial-gradient(circle, var(--b2) 0%, transparent 70%);bottom:6%;right:6%;animation-delay:-8s}
+@keyframes floaty{0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(30px,-25px) scale(1.05)}}
+.hero-content{position:relative;z-index:2;max-width:980px;animation:heroIn .9s cubic-bezier(.2,.8,.2,1) both}
+@keyframes heroIn{from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)}}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.78);
+  backdrop-filter:blur(20px) saturate(1.8);-webkit-backdrop-filter:blur(20px) saturate(1.8);
+  border:1px solid rgba(0,0,0,.06);border-radius:24px;padding:8px 18px;font-size:12.5px;
+  font-weight:700;color:var(--accent);margin-bottom:28px;letter-spacing:.04em;
+  box-shadow:0 4px 14px rgba(0,112,224,.14)}
+.hero h1{font-size:clamp(2.6rem, 6vw, 4.5rem);font-weight:900;line-height:1.05;letter-spacing:-.02em;
+  margin-bottom:28px;color:var(--text);
+  background:linear-gradient(135deg, var(--accent-dark) 0%, var(--accent) 50%, var(--purple) 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.hero-sub{font-size:clamp(1.1rem, 1.6vw, 1.3rem);color:var(--text2);max-width:680px;margin:0 auto 48px;line-height:1.55;font-weight:500}
+.hero-btns{display:flex;gap:18px;justify-content:center;flex-wrap:wrap}
+.hero-btns .btn-primary{padding:22px 52px;font-size:20px;border-radius:16px}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:18px 36px;border-radius:14px;
+  font-size:17px;font-weight:700;text-decoration:none;cursor:pointer;border:none;
+  transition:all .25s cubic-bezier(.4,0,.2,1);letter-spacing:-.01em}
+.btn-primary{background:linear-gradient(180deg, var(--accent) 0%, var(--accent-dark) 100%);color:#fff;
+  box-shadow:0 6px 20px rgba(0,112,224,.35), inset 0 1px 0 rgba(255,255,255,.25)}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,112,224,.45), inset 0 1px 0 rgba(255,255,255,.3)}
+.btn-outline{background:rgba(255,255,255,.85);color:var(--accent-dark);border:1.5px solid var(--border);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  box-shadow:0 4px 14px rgba(0,0,0,.06)}
+.btn-outline:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 8px 24px rgba(0,112,224,.2)}
+.scroll-hint{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);color:var(--text3);
+  font-size:12.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  animation:bounce 2.4s ease-in-out infinite;z-index:2}
+@keyframes bounce{0%,100%{transform:translate(-50%,0)} 50%{transform:translate(-50%,8px)}}
+
+/* WHAT YOU GET — 2 tracks */
+.tracks{padding:100px 32px 80px;max-width:1200px;margin:0 auto}
+.tracks-title{text-align:center;font-size:clamp(2rem, 3.6vw, 3rem);font-weight:900;
+  letter-spacing:-.02em;margin-bottom:14px;color:var(--text)}
+.tracks-sub{text-align:center;color:var(--text2);font-size:18px;margin-bottom:60px;font-weight:500;max-width:680px;margin-left:auto;margin-right:auto}
+.tracks-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px}
+@media(max-width:900px){.tracks-grid{grid-template-columns:1fr;gap:28px}}
+.track{background:var(--surface);border-radius:24px;padding:44px 38px;
+  border:1px solid var(--border);box-shadow:0 4px 24px rgba(0,0,0,.04);
+  opacity:0;transform:translateY(40px);
+  transition:opacity .8s cubic-bezier(.2,.8,.2,1), transform .8s cubic-bezier(.2,.8,.2,1), box-shadow .25s}
+.track.visible{opacity:1;transform:translateY(0)}
+.track:hover{box-shadow:0 12px 40px rgba(0,112,224,.14);transform:translateY(-4px)}
+.track-icon{width:64px;height:64px;border-radius:18px;display:flex;align-items:center;justify-content:center;
+  font-size:30px;margin-bottom:24px;
+  box-shadow:0 6px 20px rgba(0,0,0,.08)}
+.track-1 .track-icon{background:linear-gradient(135deg, #0d57c6, #009cde);color:#fff}
+.track-2 .track-icon{background:linear-gradient(135deg, #0070e0, #00b3e6);color:#fff}
+.track h3{font-size:28px;font-weight:900;letter-spacing:-.015em;margin-bottom:6px;color:var(--text)}
+.track .sub{font-size:15px;color:var(--text2);margin-bottom:24px;font-weight:500}
+.track ul{list-style:none;padding:0}
+.track li{display:flex;align-items:flex-start;gap:12px;padding:14px 0;border-top:1px solid var(--border);
+  font-size:16px;line-height:1.55}
+.track li:first-child{border-top:none}
+.track li .bullet{flex-shrink:0;width:28px;height:28px;border-radius:8px;display:inline-flex;
+  align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;margin-top:1px}
+.track-1 li .bullet{background:linear-gradient(135deg, #009cde, #0d57c6)}
+.track-2 li .bullet{background:linear-gradient(135deg, #00b3e6, #0070e0)}
+.track li b{display:block;color:var(--text);font-size:16px;font-weight:800;margin-bottom:4px}
+.track li span{color:var(--text2);font-size:14.5px;font-weight:500}
+
+/* STATS — coverage panel */
+.stats-section{padding:100px 32px;background:linear-gradient(180deg, var(--bg) 0%, #f8fcff 100%);text-align:center}
+.stats-section h2{font-size:clamp(1.8rem, 3vw, 2.6rem);font-weight:900;letter-spacing:-.02em;margin-bottom:14px}
+.stats-section .sub{color:var(--text2);font-size:17px;margin-bottom:50px;font-weight:500}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;max-width:1100px;margin:0 auto 70px}
+@media(max-width:800px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+.stat-card{background:var(--surface);border-radius:18px;padding:30px 20px;border:1px solid var(--border);
+  box-shadow:0 2px 12px rgba(0,0,0,.04);
+  opacity:0;transform:translateY(20px);transition:all .8s cubic-bezier(.2,.8,.2,1)}
+.stat-card.visible{opacity:1;transform:translateY(0)}
+.stat-num{font-size:3.2rem;font-weight:900;color:var(--accent);line-height:1;letter-spacing:-.03em;
+  background:linear-gradient(135deg, var(--accent-dark), var(--accent));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.stat-lbl{font-size:14px;color:var(--text2);margin-top:8px;font-weight:700;letter-spacing:.02em}
+
+.dept-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:18px;max-width:1100px;margin:0 auto}
+.dept-pill{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px 18px;
+  box-shadow:0 2px 8px rgba(0,0,0,.04);
+  opacity:0;transform:translateY(20px);transition:all .8s cubic-bezier(.2,.8,.2,1);
+  position:relative;overflow:hidden}
+.dept-pill.visible{opacity:1;transform:translateY(0)}
+.dept-pill::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:var(--c)}
+.dept-code{font-size:1.7rem;font-weight:900;color:var(--c);letter-spacing:-.03em;line-height:1}
+.dept-name{font-size:13px;color:var(--text2);margin-top:8px;font-weight:600;line-height:1.4}
+.dept-count{font-size:11.5px;color:var(--text3);margin-top:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+
+/* CTA bottom */
+.cta-bottom{text-align:center;padding:90px 32px;background:linear-gradient(135deg, var(--accent-dark) 0%, var(--accent) 100%);color:#fff;position:relative;overflow:hidden}
+.cta-bottom::before{content:'';position:absolute;top:-100px;right:-100px;width:400px;height:400px;
+  border-radius:50%;background:radial-gradient(circle, rgba(255,255,255,.1), transparent 70%)}
+.cta-bottom h2{font-size:clamp(1.8rem, 3vw, 2.4rem);font-weight:900;letter-spacing:-.02em;margin-bottom:12px;position:relative;z-index:2}
+.cta-bottom p{font-size:18px;opacity:.95;margin-bottom:32px;font-weight:500;position:relative;z-index:2;max-width:600px;margin-left:auto;margin-right:auto}
+.cta-bottom .btn{position:relative;z-index:2}
+.cta-bottom .btn-primary{background:#fff;color:var(--accent-dark);box-shadow:0 8px 28px rgba(0,0,0,.2)}
+.cta-bottom .btn-primary:hover{background:rgba(255,255,255,.95);transform:translateY(-3px);box-shadow:0 16px 40px rgba(0,0,0,.25)}
+.cta-bottom .btn-outline{background:rgba(255,255,255,.15);color:#fff;border:1.5px solid rgba(255,255,255,.4);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.cta-bottom .btn-outline:hover{background:rgba(255,255,255,.25);border-color:#fff;transform:translateY(-3px)}
+
+footer{background:var(--accent-dark);color:rgba(255,255,255,.6);text-align:center;padding:24px;font-size:13px;font-weight:500}
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="top-bar">
+  <div class="logo-box">🎓</div>
+  <div class="school-name">
+    <span data-i18n="brand.title">Undergraduate Student Study Dashboard</span>
+    <small data-i18n="brand.sub">Academic Progress Visualization System · v3.0</small>
+  </div>
+  <div class="top-spacer"></div>
+  <div class="lang-toggle">
+    <button class="lang-btn" data-lang="en">EN</button>
+    <button class="lang-btn" data-lang="zh-CN">简中</button>
+    <button class="lang-btn" data-lang="zh-TW">繁中</button>
+  </div>
+  <button class="top-logout" onclick="signOut()" data-i18n="nav.signout">Sign out</button>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <div class="hero-badge"><span>📊</span> <span data-i18n="hero.badge">Academic Progress Visualization · v3.0</span></div>
+    <h1 data-i18n="hero.h1">Undergraduate Student Study Dashboard</h1>
+    <p class="hero-sub" data-i18n="hero.sub">Plan your GPA. Map your skills. Discover the right courses to take next — all in one place.</p>
+    <div class="hero-btns">
+      <a href="student_dashboard_index.html" class="btn btn-primary" data-i18n="hero.cta">🚀 Enter Dashboard</a>
+      <a href="guide.html" class="btn btn-outline" data-i18n="hero.guide">📖 User Guide</a>
+    </div>
+  </div>
+  <div class="scroll-hint">↓ <span data-i18n="hero.scroll">scroll to see how</span> ↓</div>
+</section>
+
+<!-- WHAT YOU GET — 2 tracks -->
+<section class="tracks">
+  <h2 class="tracks-title" data-i18n="tracks.h2">What you can get</h2>
+  <p class="tracks-sub" data-i18n="tracks.sub">Two clear paths — track your grades, and map your skills.</p>
+  <div class="tracks-grid">
+
+    <!-- TRACK 1: GPA -->
+    <div class="track track-1 reveal">
+      <div class="track-icon">📈</div>
+      <h3 data-i18n="track1.h3">GPA Track</h3>
+      <div class="sub" data-i18n="track1.sub">Track, query, predict, and plan your grades end-to-end.</div>
+      <ul>
+        <li>
+          <span class="bullet">1</span>
+          <div><b data-i18n="track1.li1.b">Import your full transcript (PDF)</b>
+          <span data-i18n="track1.li1.s">Drop your CUHK(SZ) transcript — we auto-extract every course, grade, and semester.</span></div>
+        </li>
+        <li>
+          <span class="bullet">2</span>
+          <div><b data-i18n="track1.li2.b">Visualize your grade trajectory</b>
+          <span data-i18n="track1.li2.s">See every letter grade, each semester's GPA, and your CGPA on one interactive chart.</span></div>
+        </li>
+        <li>
+          <span class="bullet">3</span>
+          <div><b data-i18n="track1.li3.b">Set a target CGPA &amp; track distance</b>
+          <span data-i18n="track1.li3.s">Type your target GPA — see exactly where you stand vs. where you want to be.</span></div>
+        </li>
+        <li>
+          <span class="bullet">4</span>
+          <div><b data-i18n="track1.li4.b">Predict &amp; plan future grades</b>
+          <span data-i18n="track1.li4.s">Add hypothetical grades for upcoming semesters — instantly see your projected CGPA.</span></div>
+        </li>
+        <li>
+          <span class="bullet">5</span>
+          <div><b data-i18n="track1.li5.b">Export to Excel for advisor meetings</b>
+          <span data-i18n="track1.li5.s">One click → a clean Excel with courses, grades, GPA, skill scores — share with your advisor.</span></div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- TRACK 2: Skills -->
+    <div class="track track-2 reveal">
+      <div class="track-icon">🎯</div>
+      <h3 data-i18n="track2.h3">Skills Track</h3>
+      <div class="sub" data-i18n="track2.sub">Know what skills your courses build — and what's missing.</div>
+      <ul>
+        <li>
+          <span class="bullet">1</span>
+          <div><b data-i18n="track2.li1.b">A course database with 308 courses</b>
+          <span data-i18n="track2.li1.s">Every course is scored on 9 major + 9 general skill dimensions, derived from real syllabi.</span></div>
+        </li>
+        <li>
+          <span class="bullet">2</span>
+          <div><b data-i18n="track2.li2.b">See your skill ability profile</b>
+          <span data-i18n="track2.li2.s">Each skill bar shows where you are: Exposure → Foundation → Proficiency → Mastery.</span></div>
+        </li>
+        <li>
+          <span class="bullet">3</span>
+          <div><b data-i18n="track2.li3.b">Spot your strengths &amp; gaps</b>
+          <span data-i18n="track2.li3.s">Top-3 strongest skills surface automatically. Gaps below 25 are flagged for action.</span></div>
+        </li>
+        <li>
+          <span class="bullet">4</span>
+          <div><b data-i18n="track2.li4.b">Get course recommendations</b>
+          <span data-i18n="track2.li4.s">Pick a target skill — we rank the courses that build it most efficiently, filtered by term.</span></div>
+        </li>
+        <li>
+          <span class="bullet">5</span>
+          <div><b data-i18n="track2.li5.b">Compare against your category average</b>
+          <span data-i18n="track2.li5.s">Red marker on each bar = your category's mean. Instantly see where you out- or under-perform.</span></div>
+        </li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="stats-section">
+  <h2 data-i18n="stats.h2">Built on real data</h2>
+  <p class="sub" data-i18n="stats.sub">Every score, every recommendation — backed by actual course catalog content.</p>
+  <div class="stats-grid">
+    <div class="stat-card reveal"><div class="stat-num" data-count="308">0</div><div class="stat-lbl" data-i18n="stats.courses">Courses Evaluated</div></div>
+    <div class="stat-card reveal"><div class="stat-num" data-count="11">0</div><div class="stat-lbl" data-i18n="stats.cats">Course Categories</div></div>
+    <div class="stat-card reveal"><div class="stat-num" data-count="99">0</div><div class="stat-lbl" data-i18n="stats.major">Major-skill Dimensions</div></div>
+    <div class="stat-card reveal"><div class="stat-num" data-count="9">0</div><div class="stat-lbl" data-i18n="stats.gen">General Competencies</div></div>
+  </div>
+
+  <h2 style="margin-top:60px" data-i18n="depts.h2">11 Categories Covered</h2>
+  <p class="sub" data-i18n="depts.sub">9 specialized skills per category, plus 9 universal General Skills.</p>
+  <div class="dept-grid">
+    <div class="dept-pill reveal" style="--c:#2563eb"><div class="dept-code">ACT</div><div class="dept-name" data-i18n="d.act">Accounting</div><div class="dept-count">22 courses</div></div>
+    <div class="dept-pill reveal" style="--c:#dc2626"><div class="dept-code">MAT</div><div class="dept-name" data-i18n="d.mat">Mathematics</div><div class="dept-count">42 courses</div></div>
+    <div class="dept-pill reveal" style="--c:#7c2d12"><div class="dept-code">CSC</div><div class="dept-name" data-i18n="d.csc">Computer Science</div><div class="dept-count">40 courses</div></div>
+    <div class="dept-pill reveal" style="--c:#0891b2"><div class="dept-code">MGT</div><div class="dept-name" data-i18n="d.mgt">Management</div><div class="dept-count">28 courses</div></div>
+    <div class="dept-pill reveal" style="--c:#ea580c"><div class="dept-code">MKT</div><div class="dept-name" data-i18n="d.mkt">Marketing</div><div class="dept-count">20 courses</div></div>
+    <div class="dept-pill reveal" style="--c:#1e40af"><div class="dept-code">FIN</div><div class="dept-name" data-i18n="d.fin">Finance</div><div class="dept-count">19 courses</div></div>
+    <div class="dept-pill reveal" style="--c:#9333ea"><div class="dept-code">MIS</div><div class="dept-name" data-i18n="d.mis">MIS / Business AI</div><div class="dept-count">5 courses</div></div>
+    <div class="dept-pill reveal" style="--c:#7c3aed"><div class="dept-code">PSY</div><div class="dept-name" data-i18n="d.psy">Psychology</div><div class="dept-count">3 courses</div></div>
+    <div class="dept-pill reveal" style="--c:#a855f7"><div class="dept-code">TRA</div><div class="dept-name" data-i18n="d.tra">Translation</div><div class="dept-count">2 courses</div></div>
+    <div class="dept-pill reveal" style="--c:#059669"><div class="dept-code">BIO</div><div class="dept-name" data-i18n="d.bio">Biology &amp; Life Sciences</div><div class="dept-count">5 courses</div></div>
+    <div class="dept-pill reveal" style="--c:#475569"><div class="dept-code">GE</div><div class="dept-name" data-i18n="d.ge">General Education</div><div class="dept-count">100+ courses</div></div>
+    <div class="dept-pill reveal" style="--c:#16a34a"><div class="dept-code">PED</div><div class="dept-name" data-i18n="d.ped">Physical Education</div><div class="dept-count">18 courses</div></div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-bottom">
+  <h2 data-i18n="cta.h2">Ready to map your academic journey?</h2>
+  <p data-i18n="cta.sub">Take 2 minutes — import your transcript and see your skill map appear.</p>
+  <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
+    <a href="student_dashboard_index.html" class="btn btn-primary" data-i18n="cta.cta">🚀 Enter Dashboard</a>
+    <a href="guide.html" class="btn btn-outline" data-i18n="cta.guide">📖 Read User Guide</a>
+  </div>
+</section>
+
+<footer>
+  <span data-i18n="foot">Undergraduate Student Study Dashboard · Academic Progress Visualization System</span>
+</footer>
+
+<script>
+// ── Reveal-on-scroll animation ──
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting){
+      e.target.classList.add('visible');
+      // Counter animation for stat numbers
+      const n = e.target.querySelector('.stat-num[data-count]');
+      if (n && !n.dataset.done){
+        n.dataset.done = '1';
+        const target = parseInt(n.dataset.count, 10) || 0;
+        const duration = 1200;
+        const start = performance.now();
+        const step = (t) => {
+          const p = Math.min((t - start) / duration, 1);
+          const eased = 1 - Math.pow(1 - p, 3);
+          n.textContent = Math.round(target * eased);
+          if (p < 1) requestAnimationFrame(step);
+          else n.textContent = target;
+        };
+        requestAnimationFrame(step);
+      }
+    }
+  });
+}, { threshold: 0.15 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// ── i18n ──
+const I18N = {
+  'en':{
+    'brand.title':'Undergraduate Student Study Dashboard','brand.sub':'Academic Progress Visualization System · v3.0',
+    'nav.signout':'Sign out',
+    'hero.badge':'Academic Progress Visualization · v3.0',
+    'hero.h1':'Plan your GPA. Map your skills.',
+    'hero.sub':'Track grades, predict your CGPA, and discover the right courses to take next — all in one place.',
+    'hero.cta':'🚀 Enter Dashboard','hero.guide':'📖 User Guide','hero.scroll':'scroll to see how',
+    'tracks.h2':'What you can get','tracks.sub':'Two clear paths — track your grades, and map your skills.',
+    'track1.h3':'GPA Track','track1.sub':'Track, query, predict, and plan your grades end-to-end.',
+    'track1.li1.b':'Import your full transcript (PDF)','track1.li1.s':'Drop your CUHK(SZ) transcript — we auto-extract every course, grade, and semester.',
+    'track1.li2.b':'Visualize your grade trajectory','track1.li2.s':'See every letter grade, each semester’s GPA, and your CGPA on one interactive chart.',
+    'track1.li3.b':'Set a target CGPA & track distance','track1.li3.s':'Type your target GPA — see exactly where you stand vs. where you want to be.',
+    'track1.li4.b':'Predict & plan future grades','track1.li4.s':'Add hypothetical grades for upcoming semesters — instantly see your projected CGPA.',
+    'track1.li5.b':'Export to Excel for advisor meetings','track1.li5.s':'One click → a clean Excel with courses, grades, GPA, skill scores — share with your advisor.',
+    'track2.h3':'Skills Track','track2.sub':'Know what skills your courses build — and what’s missing.',
+    'track2.li1.b':'A course database with 308 courses','track2.li1.s':'Every course is scored on 9 major + 9 general skill dimensions, derived from real syllabi.',
+    'track2.li2.b':'See your skill ability profile','track2.li2.s':'Each skill bar shows where you are: Exposure → Foundation → Proficiency → Mastery.',
+    'track2.li3.b':'Spot your strengths & gaps','track2.li3.s':'Top-3 strongest skills surface automatically. Gaps below 25 are flagged for action.',
+    'track2.li4.b':'Get course recommendations','track2.li4.s':'Pick a target skill — we rank the courses that build it most efficiently, filtered by term.',
+    'track2.li5.b':'Compare against your category average','track2.li5.s':'Red marker on each bar = your category’s mean. Instantly see where you out- or under-perform.',
+    'stats.h2':'Built on real data','stats.sub':'Every score, every recommendation — backed by actual course catalog content.',
+    'stats.courses':'Courses Evaluated','stats.cats':'Course Categories','stats.major':'Major-skill Dimensions','stats.gen':'General Competencies',
+    'depts.h2':'11 Categories Covered','depts.sub':'9 specialized skills per category, plus 9 universal General Skills.',
+    'd.act':'Accounting','d.mat':'Mathematics','d.csc':'Computer Science','d.mgt':'Management','d.mkt':'Marketing','d.fin':'Finance',
+    'd.mis':'MIS / Business AI','d.psy':'Psychology','d.tra':'Translation','d.bio':'Biology & Life Sciences','d.ge':'General Education','d.ped':'Physical Education',
+    'cta.h2':'Ready to map your academic journey?','cta.sub':'Take 2 minutes — import your transcript and see your skill map appear.',
+    'cta.cta':'🚀 Enter Dashboard','cta.guide':'📖 Read User Guide',
+    'foot':'Undergraduate Student Study Dashboard · Academic Progress Visualization System'
+  },
+  'zh-CN':{
+    'brand.title':'本科生学习仪表盘','brand.sub':'学业进展可视化系统 · v3.0',
+    'nav.signout':'登出',
+    'hero.badge':'学业进展可视化 · v3.0',
+    'hero.h1':'规划你的 GPA，描绘你的技能。',
+    'hero.sub':'跟踪成绩、预测 CGPA、发现下一步该上哪些课 — 一个产品搞定。',
+    'hero.cta':'🚀 进入仪表盘','hero.guide':'📖 用户指南','hero.scroll':'向下滑动看看怎么用',
+    'tracks.h2':'你能得到什么','tracks.sub':'两条清晰的路径 — 跟踪你的成绩，描绘你的技能。',
+    'track1.h3':'GPA 路径','track1.sub':'从跟踪、查询到预测、规划，一站式管理你的成绩。',
+    'track1.li1.b':'导入完整成绩单（PDF）','track1.li1.s':'拖入港中深成绩单 — 自动提取每门课、每个分数、每个学期。',
+    'track1.li2.b':'可视化你的成绩轨迹','track1.li2.s':'一张交互图中看到每门课的字母成绩、每学期 GPA、当前 CGPA。',
+    'track1.li3.b':'设定目标 CGPA 并追踪差距','track1.li3.s':'输入目标 GPA — 立即看到你与目标之间的距离。',
+    'track1.li4.b':'预测 & 规划未来成绩','track1.li4.s':'为接下来的学期添加假设成绩 — 即时看到预测 CGPA。',
+    'track1.li5.b':'导出 Excel 用于咨询','track1.li5.s':'一键导出干净的 Excel — 含课程、成绩、GPA、技能得分，与导师共享。',
+    'track2.h3':'技能路径','track2.sub':'清楚每门课能建立哪些技能 — 还有哪些缺口。',
+    'track2.li1.b':'308 门课的技能数据库','track2.li1.s':'每门课在 9 项专业 + 9 项通用技能维度评分，全部基于真实教学大纲。',
+    'track2.li2.b':'查看你的技能能力剖面','track2.li2.s':'每条技能条显示你的层级：接触 → 入门 → 熟练 → 精通。',
+    'track2.li3.b':'识别你的优势与不足','track2.li3.s':'自动呈现前 3 强技能，分数低于 25 的缺口会被标记提醒。',
+    'track2.li4.b':'获取课程推荐','track2.li4.s':'选定目标技能 — 我们按构建效率排序课程，可按学期筛选。',
+    'track2.li5.b':'与类别均值对比','track2.li5.s':'每条技能上的红点 = 你类别的平均分。立刻看到自己在哪些方面领先或落后。',
+    'stats.h2':'基于真实数据构建','stats.sub':'每一项得分、每一条推荐 — 全部基于真实课程目录内容。',
+    'stats.courses':'已评估课程','stats.cats':'课程类别','stats.major':'专业技能维度','stats.gen':'通用能力',
+    'depts.h2':'覆盖 11 个类别','depts.sub':'每个类别 9 项专业技能，外加 9 项通用技能。',
+    'd.act':'会计','d.mat':'数学','d.csc':'计算机科学','d.mgt':'管理学','d.mkt':'市场营销','d.fin':'金融',
+    'd.mis':'商业 AI / MIS','d.psy':'心理学','d.tra':'翻译','d.bio':'生物与生命科学','d.ge':'通识教育','d.ped':'体育',
+    'cta.h2':'准备好规划你的学业了吗？','cta.sub':'只需 2 分钟 — 导入成绩单，立即看到你的技能图谱。',
+    'cta.cta':'🚀 进入仪表盘','cta.guide':'📖 阅读用户指南',
+    'foot':'本科生学习仪表盘 · 学业进展可视化系统'
+  },
+  'zh-TW':{
+    'brand.title':'本科生學習儀表板','brand.sub':'學業進展視覺化系統 · v3.0',
+    'nav.signout':'登出',
+    'hero.badge':'學業進展視覺化 · v3.0',
+    'hero.h1':'規劃你的 GPA，描繪你的技能。',
+    'hero.sub':'追蹤成績、預測 CGPA、發現下一步該上哪些課 — 一個產品搞定。',
+    'hero.cta':'🚀 進入儀表板','hero.guide':'📖 使用指南','hero.scroll':'向下滑動看看怎麼用',
+    'tracks.h2':'你能得到什麼','tracks.sub':'兩條清晰的路徑 — 追蹤你的成績，描繪你的技能。',
+    'track1.h3':'GPA 路徑','track1.sub':'從追蹤、查詢到預測、規劃，一站式管理你的成績。',
+    'track1.li1.b':'匯入完整成績單（PDF）','track1.li1.s':'拖入港中深成績單 — 自動提取每門課、每個分數、每個學期。',
+    'track1.li2.b':'視覺化你的成績軌跡','track1.li2.s':'一張互動圖中看到每門課的字母成績、每學期 GPA、當前 CGPA。',
+    'track1.li3.b':'設定目標 CGPA 並追蹤差距','track1.li3.s':'輸入目標 GPA — 立即看到你與目標之間的距離。',
+    'track1.li4.b':'預測 & 規劃未來成績','track1.li4.s':'為接下來的學期新增假設成績 — 即時看到預測 CGPA。',
+    'track1.li5.b':'匯出 Excel 用於諮詢','track1.li5.s':'一鍵匯出乾淨的 Excel — 含課程、成績、GPA、技能得分，與導師共享。',
+    'track2.h3':'技能路徑','track2.sub':'清楚每門課能建立哪些技能 — 還有哪些缺口。',
+    'track2.li1.b':'308 門課的技能資料庫','track2.li1.s':'每門課在 9 項專業 + 9 項通用技能維度評分，全部基於真實教學大綱。',
+    'track2.li2.b':'查看你的技能能力剖面','track2.li2.s':'每條技能條顯示你的層級：接觸 → 入門 → 熟練 → 精通。',
+    'track2.li3.b':'識別你的優勢與不足','track2.li3.s':'自動呈現前 3 強技能，分數低於 25 的缺口會被標記提醒。',
+    'track2.li4.b':'獲取課程推薦','track2.li4.s':'選定目標技能 — 我們按建構效率排序課程，可按學期篩選。',
+    'track2.li5.b':'與類別均值對比','track2.li5.s':'每條技能上的紅點 = 你類別的平均分。立刻看到自己在哪些方面領先或落後。',
+    'stats.h2':'基於真實資料建構','stats.sub':'每一項得分、每一條推薦 — 全部基於真實課程目錄內容。',
+    'stats.courses':'已評估課程','stats.cats':'課程類別','stats.major':'專業技能維度','stats.gen':'通用能力',
+    'depts.h2':'涵蓋 11 個類別','depts.sub':'每個類別 9 項專業技能，另加 9 項通用技能。',
+    'd.act':'會計','d.mat':'數學','d.csc':'電腦科學','d.mgt':'管理學','d.mkt':'行銷','d.fin':'金融',
+    'd.mis':'商業 AI / MIS','d.psy':'心理學','d.tra':'翻譯','d.bio':'生物與生命科學','d.ge':'通識教育','d.ped':'體育',
+    'cta.h2':'準備好規劃你的學業了嗎？','cta.sub':'只需 2 分鐘 — 匯入成績單，立即看到你的技能圖譜。',
+    'cta.cta':'🚀 進入儀表板','cta.guide':'📖 閱讀使用指南',
+    'foot':'本科生學習儀表板 · 學業進展視覺化系統'
+  }
+};
+function applyI18n(lang){
+  const d = I18N[lang] || I18N['en'];
+  document.querySelectorAll('[data-i18n]').forEach(el => { const k = el.dataset.i18n; if (d[k]) el.textContent = d[k]; });
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+  try { localStorage.setItem('cuhksz_lang', lang); } catch(e){}
+  document.documentElement.lang = lang;
+}
+
+function signOut(){
+  if (!confirm('Sign out?')) return;
+  try { localStorage.removeItem('cuhksz_session'); } catch(e){}
+  try { sessionStorage.removeItem('cuhksz_user_session'); } catch(e){}
+  window.location.href = '/app';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  let lang = 'en';
+  try { lang = localStorage.getItem('cuhksz_lang') || 'en'; } catch(e){}
+  if (!I18N[lang]) lang = 'en';
+  document.querySelectorAll('.lang-btn').forEach(b => b.addEventListener('click', () => applyI18n(b.dataset.lang)));
+  applyI18n(lang);
+});
+</script>
+
+</body>
+</html>

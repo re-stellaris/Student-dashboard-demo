@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>User Guide · Study Dashboard</title>
+<link rel="icon" type="image/png" href="../assets/Image_20260513001106_704_33.png"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --nav:#0070e0;--accent:#009cde;--bg:#f2f8ff;--surface:#fff;
+  --border:#d8e6f7;--text:#102a43;--text2:#486581;--text3:#829ab1;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+     background:var(--bg);color:var(--text);font-size:14px;line-height:1.6}
+.topnav{background:var(--nav);display:flex;align-items:center;height:52px;padding:0 20px;position:sticky;top:0;z-index:100}
+.nav-logo{color:#fff;font-weight:800;font-size:14px;margin-right:16px;text-decoration:none}
+.nav-link{color:rgba(255,255,255,.7);font-size:13px;text-decoration:none;padding:6px 12px;border-radius:6px}
+.nav-link:hover{background:rgba(255,255,255,.1);color:#fff}
+.nav-spacer{flex:1}
+.wrap{max-width:880px;margin:0 auto;padding:32px 24px 60px}
+h1{font-size:1.8rem;font-weight:900;margin-bottom:6px}
+.subtitle{color:var(--text2);margin-bottom:32px;font-size:15px}
+.step{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 24px;margin-bottom:18px;display:grid;grid-template-columns:60px 1fr;gap:18px;align-items:start}
+.step-num{width:48px;height:48px;border-radius:50%;background:var(--accent);color:#fff;font-weight:900;font-size:20px;display:flex;align-items:center;justify-content:center}
+.step h2{font-size:1.1rem;font-weight:800;margin-bottom:6px}
+.step p{color:var(--text2);font-size:13.5px}
+.step b{color:var(--text)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 24px;margin-bottom:18px}
+.card h2{font-size:1.1rem;font-weight:800;margin-bottom:8px}
+.scale{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}
+.scale-cell{padding:14px 10px;border-radius:10px;text-align:center}
+.scale-cell .r{font-size:13px;font-weight:800}
+.scale-cell .l{font-size:14px;font-weight:800;margin:4px 0}
+.scale-cell .d{font-size:11.5px;line-height:1.4}
+.formula{background:#0d57c6;color:#d7ecff;padding:14px 18px;border-radius:10px;font-family:'SF Mono',Consolas,monospace;font-size:13px;margin:10px 0;line-height:1.7}
+.formula b{color:#fff}
+.tip{background:#eef7ff;border-left:3px solid var(--accent);padding:10px 14px;border-radius:6px;font-size:12.5px;color:#0d57c6;margin-top:10px;line-height:1.55}
+.cta{display:flex;gap:12px;justify-content:center;margin-top:30px;flex-wrap:wrap}
+.btn{padding:12px 24px;border-radius:10px;font-weight:700;text-decoration:none;font-size:14px;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#007fc5}
+.btn-outline{background:var(--surface);color:var(--text);border:1.5px solid var(--border)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+ul{margin:6px 0 0 18px;font-size:13px;color:var(--text2)}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="index.html" class="nav-logo">🎓 <span data-i18n="nav.title">Study Dashboard</span></a>
+  <a href="index.html" class="nav-link">🏠 <span data-i18n="nav.home">Home</span></a>
+  <a href="student_dashboard_index.html" class="nav-link">📊 <span data-i18n="nav.dashboard">Dashboard</span></a>
+  <div class="nav-spacer"></div>
+  <div class="lang-toggle">
+    <button class="lang-btn" data-lang="en">EN</button>
+    <button class="lang-btn" data-lang="zh-CN">简中</button>
+    <button class="lang-btn" data-lang="zh-TW">繁中</button>
+  </div>
+</nav>
+
+<style>
+.lang-toggle{display:inline-flex;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:20px;overflow:hidden;
+  backdrop-filter:blur(20px) saturate(1.8);-webkit-backdrop-filter:blur(20px) saturate(1.8);margin-right:14px}
+.lang-btn{padding:5px 12px;font-size:11.5px;font-weight:700;cursor:pointer;border:none;background:transparent;color:rgba(255,255,255,.7);transition:all .15s}
+.lang-btn:hover{background:rgba(255,255,255,.08);color:#fff}
+.lang-btn.active{background:rgba(255,255,255,.22);color:#fff}
+</style>
+<script>
+const I18N_GUIDE = {
+  'en': {'nav.title':'Study Dashboard','nav.home':'Home','nav.dashboard':'Dashboard',
+    'guide.h1':'📖 Quick Start Guide','guide.sub':'Three steps to read your skill profile · 1 minute'},
+  'zh-CN': {'nav.title':'学习仪表盘','nav.home':'首页','nav.dashboard':'仪表盘',
+    'guide.h1':'📖 快速开始指南','guide.sub':'三步读懂你的技能档案 · 一分钟'},
+  'zh-TW': {'nav.title':'學習儀表板','nav.home':'首頁','nav.dashboard':'儀表板',
+    'guide.h1':'📖 快速開始指南','guide.sub':'三步讀懂你的技能檔案 · 一分鐘'}
+};
+function applyI18nGuide(lang){
+  const d = I18N_GUIDE[lang] || I18N_GUIDE['en'];
+  document.querySelectorAll('[data-i18n]').forEach(el => { const k = el.dataset.i18n; if (d[k]) el.textContent = d[k]; });
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+  try { localStorage.setItem('cuhksz_lang', lang); } catch(e){}
+  document.documentElement.lang = lang;
+}
+document.addEventListener('DOMContentLoaded', () => {
+  let lang = 'en';
+  try { lang = localStorage.getItem('cuhksz_lang') || 'en'; } catch(e){}
+  if (!I18N_GUIDE[lang]) lang = 'en';
+  document.querySelectorAll('.lang-btn').forEach(b => b.addEventListener('click', () => applyI18nGuide(b.dataset.lang)));
+  applyI18nGuide(lang);
+});
+</script>
+
+<div class="wrap">
+  <h1 data-i18n="guide.h1">📖 Quick Start Guide</h1>
+  <p class="subtitle" data-i18n="guide.sub">Three steps to read your skill profile · 1 minute</p>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div>
+      <h2>🏫 Pick your school(s)</h2>
+      <p>Use the chips at the top of the dashboard. Click <b>All</b> for every department, or click specific ones (ACT, MAT, CSC, etc.) to filter. Add a <b>Term</b> filter to see only courses offered in Fall or Spring.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">2</div>
+    <div>
+      <h2>🎒 Build your portfolio</h2>
+      <p>Click any course on the left to add it to your portfolio. Or click <b>📥 Import Transcript</b> to load an Excel/CSV file (columns: <code>Code | Title | Grade | Semester</code>). Selections persist on this device — no signup needed.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">3</div>
+    <div>
+      <h2>📊 Read your skill profile</h2>
+      <p>Two bar charts show your <b>Major Skills</b> (specialized to your dept) and <b>General Skills</b> (cross-disciplinary). The solid blue bar = your portfolio. The red marker = department average.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📐 Skill Maturity Scale</h2>
+    <p style="color:var(--text2);font-size:13.5px">Every score (0–100) maps to one of four maturity levels. The bar background uses a single-hue blue gradient (color-blind safe) with vertical markers at <b>25 / 55 / 75</b> showing the boundaries.</p>
+    <div class="scale">
+      <div class="scale-cell" style="background:#eff3ff;color:#1e3a8a"><div class="r">0 – 25</div><div class="l">Exposure</div><div class="d">Skill mentioned, not the focus</div></div>
+      <div class="scale-cell" style="background:#bdd7e7;color:#1e40af"><div class="r">25 – 55</div><div class="l">Foundation</div><div class="d">Secondary agenda</div></div>
+      <div class="scale-cell" style="background:#6baed6;color:#0c4a6e"><div class="r">55 – 75</div><div class="l">Proficiency</div><div class="d">Core skill, structured training</div></div>
+      <div class="scale-cell" style="background:#2171b5;color:#fff"><div class="r">75 – 100</div><div class="l">Mastery</div><div class="d">Primary purpose</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🧮 How scores are computed</h2>
+    <p style="color:var(--text2);font-size:13.5px">For every course we read its <b>outcome</b>, <b>syllabus</b>, and <b>description</b>, then match the text against keyword lists for each skill dimension.</p>
+    <div class="formula">
+      <b>score</b> = coverage × (0.65 + depth × 0.20 + specificity × 0.15) × 100
+    </div>
+    <ul>
+      <li><b>Coverage (65%)</b> — how many distinct keywords for the skill appear in the course text</li>
+      <li><b>Depth (20%)</b> — how often those keywords recur (frequency / repetition)</li>
+      <li><b>Specificity (15%)</b> — whether the skill keyword appears in the course title or first sentence</li>
+    </ul>
+    <div class="tip">💡 <b>Department Average</b> (red marker on each bar) = mean of all courses in that department where the skill score is <b>greater than 0</b>. Courses that don't cover the skill at all are excluded, so the average reflects <i>real depth</i> instead of being dragged down by unrelated courses.</div>
+  </div>
+
+  <div class="card">
+    <h2>🎯 Major vs General Skills</h2>
+    <p style="color:var(--text2);font-size:13.5px"><b>Major Skills</b> are 9 specialized competencies <i>per department</i> (e.g., Financial Reporting for ACT, Calculus & Analysis for MAT). They show your depth inside your major.</p>
+    <p style="color:var(--text2);font-size:13.5px;margin-top:6px"><b>General Skills</b> are 9 universal competencies that apply to every student:</p>
+    <ul>
+      <li><b>PK</b> Professional Knowledge — <b>auto-computed</b> as the average of your major-skill scores (your overall major depth in one number)</li>
+      <li><b>QA</b> Quantitative Analysis — math, stats, modeling, data-driven decisions</li>
+      <li><b>DI</b> Data &amp; Information Literacy — collection, cleaning, analysis, visualization</li>
+      <li><b>CM</b> Communication · <b>IP</b> Innovation &amp; Problem Solving · <b>ER</b> Ethics &amp; Social Responsibility</li>
+      <li><b>TL</b> Teamwork &amp; Leadership · <b>IC</b> Intercultural Competency · <b>SL</b> Self-directed Learning</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>📈 Grade Trajectory</h2>
+    <p style="color:var(--text2);font-size:13.5px">The Grade Trajectory chart plots <b>course letter grades</b> (blue dots), <b>semester GPA</b> (solid line), <b>current CGPA</b> (horizontal solid line), and your <b>goal GPA</b> (red dashed line). Add grades manually or via <b>Import Transcript</b>.</p>
+  </div>
+
+  <div class="cta">
+    <a href="student_dashboard_index.html" class="btn btn-primary">🚀 Open the Dashboard</a>
+    <a href="index.html" class="btn btn-outline">← Back home</a>
+  </div>
+</div>
+
+</body>
+</html>
