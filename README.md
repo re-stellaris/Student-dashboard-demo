@@ -4,18 +4,6 @@ The Student Study Progress Dashboard is an academic planning and competency-visu
 
 This midterm implementation extends a predecessor prototype by strengthening its course-data foundation, redesigning its competency-analysis workflow, improving course navigation and user interaction, and refining the GPA trajectory and skill-matrix interfaces.
 
-## Project Motivation
-
-Students currently obtain academic information from multiple disconnected sources, including transcripts, SIS course pages, programme study schemes, and university notices. The predecessor dashboard demonstrated the value of integrating this information, but several limitations reduced its reliability and usability:
-
-- The built-in course list covered only a small portion of the campus course pool, so transcript courses missing from the internal database could not be mapped correctly.
-- Course exemptions, credit transfers, exchange courses, and approved substitutions were not fully represented by automatic transcript parsing.
-- A fixed GPA axis compressed small but meaningful changes in semester performance.
-- The skill matrix displayed many irrelevant or empty columns because different programmes were evaluated against a shared union of skill categories.
-- Skill definitions and course-skill relationships were largely manual and difficult to generalize across schools.
-- Course recommendations were not directly connected to detailed course descriptions, prerequisites, syllabi, and assessment information.
-- The platform had limited account, course-feedback, and career-oriented interaction.
-
 ## Midterm Improvements
 
 ### 1. Course catalogue and course-outline expansion
@@ -67,26 +55,6 @@ These functions are prototypes rather than a production identity or social syste
 ### 5. GPA trajectory and skill-matrix presentation
 
 The GPA trajectory's vertical axis was changed from 0-4.0 to 2.0-4.0, reducing unnecessary blank space and making performance changes easier to interpret. The skill matrix was reorganized according to each course's major category and simplified to reduce irrelevant columns and visual clutter.
-
-## Core Features
-
-### Student dashboard
-
-- Transcript-based academic-record processing.
-- GPA and CGPA trajectory visualization.
-- Future course portfolio planning.
-- Major and general competency visualization.
-- Skill-oriented course recommendation.
-- Course browsing and detail navigation.
-- Exportable academic and competency summaries.
-
-### Academic advisor dashboard
-
-- Advisee academic-progress overview.
-- GPA and credit-completion indicators.
-- Risk indicators based on GPA decline, credit delay, and contact history.
-- Advisor communication and contact-log information.
-- Aggregated progress information for earlier academic intervention.
 
 ## System Architecture
 
@@ -312,30 +280,12 @@ The package includes:
 - a demonstration of the newly implemented dashboard functions; and
 - a demonstration of the database and data-analysis workflow.
 
-## Verification
-
-The midterm prototype is evaluated through the following checks:
-
-1. The React frontend builds successfully.
-2. The FastAPI service starts and exposes the configured routes.
-3. `GET /health` reports the database-connection state.
-4. Student and advisor navigation routes load successfully.
-5. Course data can be loaded from the configured database or bundled prototype data.
-6. The generated course and competency workbooks contain the documented record counts and worksheets.
-7. Screenshots and video evidence demonstrate the implemented workflows.
-
 ## Known Limitations and Risks
 
 - The current login interface is a prototype and is not official CUHK-Shenzhen SSO.
-- Some user and planning state is stored in browser storage rather than a production account system.
-- Account and comment functionality requires persistent storage, authorization, moderation, and security testing before production use.
-- Course exemptions, credit transfers, exchange courses, and approved substitutions require a manual-input workflow.
-- 1,631 SIS records do not currently contain complete outline information.
 - The expanded SIS and competency-analysis datasets have not yet been integrated into the student-facing interface, which still relies on the inherited `data.js` database.
 - The revised GPA trajectory still uses a unified 2.0-4.0 scale. A future version should adjust the scale according to each student's GPA variance and distribution while retaining suitable visual margins.
-- Competency relevance is an AI-assisted analytical result and requires human review.
-- The competency score represents relevance, not student mastery, course quality, or career value.
-- The prototype has not been tested against a full production student database or university identity system.
+- Competency relevance is an AI-assisted analytical result and requires argue access while user discover any mistake during usage.
 - SIS page changes may require maintenance of crawler selectors and navigation logic.
 
 ## Plan Toward Final Delivery
