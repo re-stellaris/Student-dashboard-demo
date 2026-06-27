@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Course Detail</title>
+<script src="data.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --purple:#0070e0;--bg:#f5f4f9;--surface:#fff;--border:#e2e5ed;
+  --text:#1a1d2e;--text2:#5a6076;--text3:#9198b0;
+  --radius:12px;--accent:#2171b5;
+  --b1:#eff3ff;--b2:#bdd7e7;--b3:#6baed6;--b4:#2171b5;
+  --mt1-bg:#eff3ff;--mt1-fg:#1e3a8a;
+  --mt2-bg:#bdd7e7;--mt2-fg:#1e40af;
+  --mt3-bg:#6baed6;--mt3-fg:#0c4a6e;
+  --mt4-bg:#2171b5;--mt4-fg:#ffffff;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+     background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh}
+.topnav{background:var(--purple);display:flex;align-items:center;height:52px;padding:0 24px;gap:16px}
+.topnav a{color:rgba(255,255,255,.8);text-decoration:none;font-size:13px;font-weight:600}
+.topnav a:hover{color:#fff}
+.topnav .logo{color:#fff;font-weight:800;font-size:15px}
+.nav-spacer{flex:1}
+.user-pill{display:flex;align-items:center;gap:8px;color:#fff;font-size:12px;background:rgba(255,255,255,.12);padding:5px 10px;border-radius:20px}
+.user-pill .ub{cursor:pointer;background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:20px;padding:2px 8px;font-size:11px;font-weight:700}
+.user-pill .ub:hover{background:rgba(255,255,255,.35)}
+.container{max-width:900px;margin:32px auto;padding:0 24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;margin-bottom:24px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+/* Header */
+.course-header{margin-bottom:24px}
+.course-code{font-size:32px;font-weight:900;color:var(--accent);letter-spacing:-.02em;line-height:1.1}
+.course-title{font-size:18px;color:var(--text);font-weight:600;margin-top:6px;line-height:1.3}
+/* Meta row */
+.meta-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px}
+.meta-tag{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:20px;
+  font-size:12.5px;font-weight:700;background:var(--bg);border:1px solid var(--border)}
+.meta-tag .dot{width:9px;height:9px;border-radius:50%}
+/* Section */
+.section{margin-top:28px}
+.section h2{font-size:15px;font-weight:800;margin-bottom:12px;color:var(--text);
+  padding-bottom:8px;border-bottom:2px solid var(--accent);display:inline-block}
+/* Outcome */
+.outcome-list{padding-left:20px;line-height:1.9;color:#374151}
+.outcome-list li{margin-bottom:4px;font-size:14px}
+/* Score rows */
+.score-row{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.score-lbl{font-size:13px;font-weight:700;color:var(--text);width:220px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.score-id{display:inline-block;width:32px;font-weight:900;color:var(--accent);font-size:12px}
+.score-bar-bg{flex:1;height:12px;position:relative;border-radius:6px;overflow:hidden;
+  background:linear-gradient(90deg, var(--b1) 0% 25%, var(--b2) 25% 50%, var(--b3) 50% 75%, var(--b4) 75% 100%);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
+.score-bar-fill{position:absolute;left:0;top:0;height:100%;width:0;border-radius:6px;transition:width .4s ease}
+.score-val{font-size:14px;font-weight:800;color:var(--accent);min-width:34px;text-align:right}
+.maturity-tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:800;min-width:68px;text-align:center}
+/* Not found */
+.not-found{text-align:center;padding:60px 20px;color:var(--text3)}
+.not-found .icon{font-size:48px;margin-bottom:16px}
+.back-link{display:inline-flex;align-items:center;gap:6px;margin-top:20px;color:var(--accent);font-weight:700;text-decoration:none;font-size:13px}
+.back-link:hover{text-decoration:underline}
+/* Comments */
+.comments-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px 32px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.comments-card h2{font-size:17px;font-weight:800;margin-bottom:18px}
+.comment-item{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.comment-item:last-child{border-bottom:none}
+.comment-avatar{width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0}
+.comment-body{flex:1;min-width:0}
+.comment-meta{display:flex;align-items:center;gap:10px;margin-bottom:3px}
+.comment-author{font-size:13px;font-weight:700;color:var(--text)}
+.comment-time{font-size:11px;color:var(--text3)}
+.comment-text{font-size:13.5px;color:var(--text2);line-height:1.5;word-break:break-word}
+.comment-form{display:flex;gap:10px;margin-top:18px;align-items:flex-start}
+.comment-form input{flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:inherit;background:var(--bg);outline:none}
+.comment-form input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(33,113,181,.1)}
+.comment-form .btn-send{padding:10px 18px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s}
+.comment-form .btn-send:hover{background:#1a5fa0;transform:translateY(-1px)}
+.comment-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px 4px;margin-left:auto;flex-shrink:0}
+.comment-del:hover{color:#dc2626}
+.comments-empty{text-align:center;color:var(--text3);font-size:13px;padding:20px 0}
+/* Responsive */
+@media(max-width:600px){
+  .container{padding:0 12px;margin:16px auto}
+  .card{padding:20px}
+  .course-code{font-size:24px}
+  .score-lbl{width:140px;font-size:11px}
+}
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <span class="logo">📖 Course Detail</span>
+  <a href="student_dashboard_index.html">← Back to Dashboard</a>
+  <div class="nav-spacer"></div>
+  <div class="user-pill" id="user-pill" style="display:none">
+    <span id="user-name">Student</span>
+    <button class="ub" onclick="signOut()">Sign out</button>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="card" id="content"></div>
+  <div class="comments-card" id="comments-card">
+    <h2>💬 Discussion</h2>
+    <div id="comments-list"></div>
+    <div class="comment-form">
+      <input type="text" id="comment-input" placeholder="Share your thoughts about this course..." maxlength="500"/>
+      <button class="btn-send" id="comment-send">Send</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Helpers ──
+function isChinese(s){ return /[一-鿿]/.test(String(s||'')); }
+function dimName(d){ return d.name_en || (d.name && !isChinese(d.name) ? d.name : d.id); }
+function normDims(deptKey){
+  if (!DATA || !DATA.departments) return [];
+  const d = DATA.departments[deptKey]; if(!d) return [];
+  const dims = d.dimensions;
+  if (Array.isArray(dims)) return dims;
+  return Object.keys(dims).map(k => ({id:k, ...dims[k]}));
+}
+function normGenDims(){
+  if (!DATA || !DATA.general_dimensions) return [];
+  const g = DATA.general_dimensions;
+  if (Array.isArray(g)) return g;
+  return Object.keys(g).map(k => ({id:k, ...g[k]}));
+}
+
+function maturity(score){
+  if (score >= 75) return {label:'Mastery', bg:'var(--mt4-bg)', fg:'var(--mt4-fg)'};
+  if (score >= 50) return {label:'Proficiency', bg:'var(--mt3-bg)', fg:'var(--mt3-fg)'};
+  if (score >= 25) return {label:'Foundation', bg:'var(--mt2-bg)', fg:'var(--mt2-fg)'};
+  return {label:'Exposure', bg:'var(--mt1-bg)', fg:'var(--mt1-fg)'};
+}
+
+function scoreBarWidth(s){ return Math.max(0, Math.min(100, s || 0)) + '%'; }
+function scoreBarColor(s){
+  if (s >= 75) return 'var(--b4)';
+  if (s >= 50) return 'var(--b3)';
+  if (s >= 25) return 'var(--b2)';
+  return 'var(--b1)';
+}
+
+// ── Parse URL ──
+const params = new URLSearchParams(window.location.search);
+const code = params.get('code') || '';
+
+// ── Lookup ──
+let course = null;
+if (code && window.DATA && DATA.courses){
+  course = DATA.courses.find(c => c.code === code);
+}
+
+const contentEl = document.getElementById('content');
+document.title = (course ? course.code + ' — ' + course.title : 'Course Not Found') + ' · Detail';
+
+if (!course){
+  contentEl.innerHTML = `
+    <div class="not-found">
+      <div class="icon">📭</div>
+      <h2>Course Not Found</h2>
+      <p style="margin-top:8px;color:var(--text2)">No course matched code "<strong>${code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</strong>".</p>
+      <a class="back-link" href="student_dashboard_index.html">← Back to Dashboard</a>
+    </div>`;
+} else {
+  // ── Build page ──
+  const deptInfo = (DATA.departments && DATA.departments[course.dept]) || {};
+  const deptName = deptInfo.name_en || deptInfo.name || course.dept;
+  const deptColor = deptInfo.color || '#2171b5';
+  const offered = (course.offered && course.offered.length) ? course.offered.join(' / ') : 'Any term';
+  const level = course.level || (parseInt((course.code.match(/\d+/)||[0])[0]/1000)*1000) || '—';
+
+  // Learning outcomes
+  let outcomeHtml = '';
+  if (course.outcome){
+    const lines = course.outcome.split('\n').filter(l => l.replace(/[•\-\s\t]/g,'').length > 10);
+    outcomeHtml = `
+      <div class="section">
+        <h2>📋 Learning Outcomes</h2>
+        <ul class="outcome-list">
+          ${lines.map(l => '<li>' + l.replace(/^[•\-\s]+/,'').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</li>').join('')}
+        </ul>
+      </div>`;
+  }
+
+  // Major scores
+  const majorDims = normDims(course.dept);
+  let majorScoresHtml = '';
+  if (majorDims.length && course.major_scores){
+    const items = majorDims.map(d => {
+      const s = (course.major_scores && course.major_scores[d.id]) || 0;
+      const m = maturity(s);
+      return {d, s, m};
+    }).sort((a,b) => b.s - a.s);
+    majorScoresHtml = `
+      <div class="section">
+        <h2>🎯 Major Skills <span style="font-size:12px;color:var(--text3);font-weight:500">(${course.dept} — ${deptName})</span></h2>
+        ${items.map(x => `
+          <div class="score-row">
+            <span class="score-lbl"><span class="score-id">${x.d.id}</span> ${dimName(x.d)}</span>
+            <div class="score-bar-bg">
+              <div class="score-bar-fill" style="width:${scoreBarWidth(x.s)};background:${scoreBarColor(x.s)}"></div>
+            </div>
+            <span class="score-val">${x.s}</span>
+            <span class="maturity-tag" style="background:${x.m.bg};color:${x.m.fg}">${x.m.label}</span>
+          </div>
+        `).join('')}
+      </div>`;
+  }
+
+  // General scores
+  const genDims = normGenDims();
+  let genScoresHtml = '';
+  if (genDims.length && course.gen_scores){
+    const items = genDims.map(d => {
+      const s = (course.gen_scores && course.gen_scores[d.id]) || 0;
+      const m = maturity(s);
+      return {d, s, m};
+    }).sort((a,b) => b.s - a.s);
+    genScoresHtml = `
+      <div class="section">
+        <h2>🌐 General Skills</h2>
+        ${items.map(x => `
+          <div class="score-row">
+            <span class="score-lbl"><span class="score-id">${x.d.id}</span> ${dimName(x.d)}</span>
+            <div class="score-bar-bg">
+              <div class="score-bar-fill" style="width:${scoreBarWidth(x.s)};background:${scoreBarColor(x.s)}"></div>
+            </div>
+            <span class="score-val">${x.s}</span>
+            <span class="maturity-tag" style="background:${x.m.bg};color:${x.m.fg}">${x.m.label}</span>
+          </div>
+        `).join('')}
+      </div>`;
+  }
+
+  contentEl.innerHTML = `
+    <div class="course-header">
+      <div class="course-code">${course.code}</div>
+      <div class="course-title">${course.title}</div>
+      <div class="meta-row">
+        <span class="meta-tag"><span class="dot" style="background:${deptColor}"></span> ${course.dept} — ${deptName}</span>
+        <span class="meta-tag">⭐ ${course.credit || 3} Credits</span>
+        <span class="meta-tag">📊 Level ${level}</span>
+        <span class="meta-tag">📅 ${offered}</span>
+      </div>
+    </div>
+    ${outcomeHtml}
+    ${majorScoresHtml}
+    ${genScoresHtml}
+    <div style="margin-top:32px;text-align:center">
+      <a class="back-link" href="student_dashboard_index.html">← Back to Dashboard</a>
+    </div>
+  `;
+
+  // Animate score bars
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      document.querySelectorAll('.score-bar-fill').forEach(el => {
+        el.style.width = el.style.width; // trigger repaint
+      });
+    });
+  });
+}
+</script>
+<script>
+// ── Comments ──
+var STORAGE_KEY = 'course_comments_' + code.replace(/\s+/g, '_');
+function getCurrentUser(){
+  try {
+    var s = JSON.parse(localStorage.getItem('cuhksz_session') || 'null');
+    return (s && s.name) ? s.name : null;
+  } catch(e){ return null; }
+}
+function loadComments(){
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch(e){ return []; }
+}
+function saveComments(comments){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(comments));
+}
+function renderComments(){
+  var comments = loadComments();
+  var list = document.getElementById('comments-list');
+  var currentUser = getCurrentUser();
+  if (!comments.length){
+    list.innerHTML = '<div class="comments-empty">No comments yet. Be the first to share your thoughts!</div>';
+    return;
+  }
+  list.innerHTML = comments.map(function(c, i){
+    var initials = (c.name || 'User').split(/\s+/).map(function(s){return s[0];}).join('').slice(0,2).toUpperCase();
+    var isOwner = currentUser && c.name === currentUser;
+    return '<div class="comment-item">' +
+      '<div class="comment-avatar">' + initials + '</div>' +
+      '<div class="comment-body">' +
+        '<div class="comment-meta">' +
+          '<span class="comment-author">' + (c.name || 'User').replace(/</g,'&lt;') + '</span>' +
+          '<span class="comment-time">' + (c.time || '') + '</span>' +
+        '</div>' +
+        '<div class="comment-text">' + c.text.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>' +
+      '</div>' +
+      (isOwner ? '<button class="comment-del" title="Delete my comment" data-idx="' + i + '">✕</button>' : '') +
+    '</div>';
+  }).join('');
+  list.querySelectorAll('.comment-del').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var idx = parseInt(this.dataset.idx, 10);
+      var c = loadComments();
+      var user = getCurrentUser();
+      if (!user || c[idx].name !== user) return;
+      if (!confirm('Delete this comment? This action cannot be undone.')) return;
+      c.splice(idx, 1);
+      saveComments(c);
+      renderComments();
+    });
+  });
+}
+function addComment(){
+  var input = document.getElementById('comment-input');
+  var text = input.value.trim();
+  if (!text) return;
+  // Get author name from session
+  var name = 'Anonymous';
+  try {
+    var s = JSON.parse(localStorage.getItem('cuhksz_session') || 'null');
+    if (s && s.name) name = s.name;
+  } catch(e){}
+  var now = new Date();
+  var time = now.getFullYear() + '-' +
+    String(now.getMonth()+1).padStart(2,'0') + '-' +
+    String(now.getDate()).padStart(2,'0') + ' ' +
+    String(now.getHours()).padStart(2,'0') + ':' +
+    String(now.getMinutes()).padStart(2,'0');
+  var comments = loadComments();
+  comments.push({ name: name, text: text, time: time });
+  saveComments(comments);
+  input.value = '';
+  renderComments();
+}
+document.getElementById('comment-send').addEventListener('click', addComment);
+document.getElementById('comment-input').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') addComment();
+});
+renderComments();
+
+function loadUser(){
+  try {
+    var s = JSON.parse(localStorage.getItem('cuhksz_session') || 'null');
+    if (s && s.name){
+      document.getElementById('user-pill').style.display = 'flex';
+      document.getElementById('user-name').textContent = s.name;
+    }
+  } catch(e){}
+}
+function signOut(){
+  if(!confirm('Sign out? Your portfolio is preserved on this device.')) return;
+  localStorage.removeItem('cuhksz_session');
+  location.href = 'login.html';
+}
+loadUser();
+</script>
+</body>
+</html>
