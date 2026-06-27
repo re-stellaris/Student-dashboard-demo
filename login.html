@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Login · Undergraduate Study Dashboard</title>
+<link rel="icon" type="image/png" href="../assets/Image_20260513001106_704_33.png"/>
+<style>
+:root{
+  --bg:#f8f9fb; --surface:#ffffff; --surface2:#f1f3f8;
+  --border:#e2e5ed; --text:#1a1d2e; --text2:#5a6076; --text3:#9198b0;
+  --primary-purple:#7B1FA2;
+  --gradient-auth:linear-gradient(135deg,#7B1FA2 0%,#5E35B1 45%,#1E88E5 100%);
+  --glass-bg:rgba(255,255,255,.72);
+  --glass-border:rgba(255,255,255,.45);
+  --glass-shadow:0 20px 60px rgba(60,16,100,.28);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.6;font-size:15px;
+  min-height:100vh;overflow:hidden;
+}
+
+/* ═══ LOGIN GATE — full-screen overlay ═══ */
+.login-gate{
+  position:fixed; inset:0; z-index:9999;
+  display:flex; align-items:center; justify-content:center;
+  padding:24px;
+  background:var(--gradient-auth);
+  animation:gateIn .55s ease both;
+  overflow:hidden;
+}
+.login-gate.is-leaving{ animation:gateOut .45s ease forwards; }
+@keyframes gateIn  { from{opacity:0} to{opacity:1} }
+@keyframes gateOut { from{opacity:1} to{opacity:0; visibility:hidden} }
+
+/* Floating shapes */
+.bg-shapes{ position:absolute; inset:0; overflow:hidden; pointer-events:none; }
+.bg-shapes .shape{
+  position:absolute; border-radius:50%;
+  background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.35), rgba(255,255,255,0) 70%);
+  filter:blur(2px);
+  animation:floatShape 18s ease-in-out infinite;
+}
+.bg-shapes .s1{ width:520px; height:520px; top:-180px; left:-160px; }
+.bg-shapes .s2{ width:380px; height:380px; bottom:-140px; right:-120px; animation-delay:-6s; }
+.bg-shapes .s3{ width:260px; height:260px; top:38%; right:18%; animation-delay:-12s; opacity:.7; }
+@keyframes floatShape{
+  0%,100%{ transform:translate(0,0) scale(1); }
+  50%   { transform:translate(24px,-32px) scale(1.06); }
+}
+
+/* Grid overlay */
+.grid-overlay{
+  position:absolute; inset:0; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px);
+  background-size:48px 48px;
+  mask-image:radial-gradient(ellipse at center, #000 30%, transparent 75%);
+  -webkit-mask-image:radial-gradient(ellipse at center, #000 30%, transparent 75%);
+}
+
+/* ── Glass card ── */
+.auth-card{
+  position:relative; z-index:2;
+  width:100%; max-width:480px;
+  background:var(--glass-bg);
+  backdrop-filter:blur(24px) saturate(180%);
+  -webkit-backdrop-filter:blur(24px) saturate(180%);
+  border:1px solid var(--glass-border);
+  border-radius:24px;
+  padding:40px 36px 32px;
+  box-shadow:var(--glass-shadow);
+  animation:cardRise .65s cubic-bezier(.2,.9,.3,1.2) both;
+}
+@keyframes cardRise{
+  from{ opacity:0; transform:translateY(28px) scale(.96); }
+  to  { opacity:1; transform:translateY(0)    scale(1);    }
+}
+
+/* ── Brand header ── */
+.auth-brand{ display:flex; align-items:flex-start; gap:14px; margin-bottom:28px; }
+.auth-logo{ flex-shrink:0; width:128px; height:auto; display:block; object-fit:contain; }
+.auth-eyebrow{
+  font-size:11px; font-weight:700; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--primary-purple); margin-bottom:4px;
+}
+.auth-title{ font-size:1.45rem; font-weight:800; color:var(--text); line-height:1.25; margin-bottom:6px; }
+.auth-subtitle{ font-size:13px; color:var(--text2); line-height:1.5; }
+
+/* ── Role toggle ── */
+.role-toggle{
+  position:relative;
+  display:grid; grid-template-columns:1fr 1fr;
+  background:rgba(241,243,248,.85);
+  border:1px solid var(--border);
+  border-radius:14px; padding:4px; margin-bottom:24px;
+}
+.role-btn{
+  position:relative; z-index:2;
+  background:transparent; border:none; cursor:pointer;
+  padding:11px 14px; font-size:13.5px; font-weight:600;
+  color:var(--text2); border-radius:10px;
+  transition:color .25s ease; font-family:inherit;
+}
+.role-btn.active{ color:#fff; }
+.role-indicator{
+  position:absolute; top:4px; left:4px;
+  width:calc(50% - 4px); height:calc(100% - 8px);
+  background:var(--gradient-auth);
+  border-radius:10px;
+  box-shadow:0 4px 12px rgba(123,31,162,.32);
+  transition:transform .32s cubic-bezier(.4,0,.2,1);
+}
+.role-toggle.advisor .role-indicator{ transform:translateX(100%); }
+
+/* ── Form ── */
+.auth-form{ display:flex; flex-direction:column; gap:16px; animation:formIn .35s ease; }
+@keyframes formIn{ from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+.auth-field{ display:flex; flex-direction:column; gap:6px; }
+.auth-field > span{ font-size:12px; font-weight:600; color:var(--text2); letter-spacing:.02em; }
+.auth-field input{
+  width:100%; padding:12px 14px;
+  font-size:14px; font-family:inherit;
+  background:rgba(255,255,255,.85);
+  border:1.5px solid var(--border);
+  border-radius:10px; color:var(--text);
+  transition:all .2s ease; outline:none;
+}
+.auth-field input::placeholder{ color:var(--text3); }
+.auth-field input:hover{ border-color:#c7cdd9; }
+.auth-field input:focus{
+  border-color:var(--primary-purple); background:#fff;
+  box-shadow:0 0 0 4px rgba(123,31,162,.12);
+}
+.field-hint{ font-size:11.5px; color:var(--text3); margin-top:2px; }
+.field-hint.error{ color:#dc2626; font-weight:600; }
+.field-hint code{ background:rgba(123,31,162,.08); padding:1px 5px; border-radius:4px; font-size:11px; }
+
+/* ── Submit ── */
+.auth-submit{
+  margin-top:8px;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  width:100%; padding:14px 18px;
+  background:var(--gradient-auth);
+  color:#fff; font-size:14.5px; font-weight:700;
+  border:none; border-radius:12px; cursor:pointer;
+  font-family:inherit;
+  box-shadow:0 6px 20px rgba(123,31,162,.32);
+  transition:transform .18s ease, box-shadow .18s ease;
+}
+.auth-submit:hover:not(:disabled){
+  transform:translateY(-1.5px);
+  box-shadow:0 10px 28px rgba(123,31,162,.42);
+}
+.auth-submit:active{ transform:translateY(0); }
+.auth-submit:disabled{ opacity:.65; cursor:not-allowed; }
+.auth-submit .arrow{ transition:transform .25s ease; }
+.auth-submit:hover:not(:disabled) .arrow{ transform:translateX(4px); }
+.auth-submit.loading .label::after{
+  content:''; display:inline-block; width:14px; height:14px;
+  margin-left:8px;
+  border:2px solid rgba(255,255,255,.4);
+  border-top-color:#fff; border-radius:50%;
+  animation:spin .7s linear infinite; vertical-align:-2px;
+}
+@keyframes spin{ to{ transform:rotate(360deg); } }
+
+/* ── Meta ── */
+.auth-meta{
+  display:flex; flex-wrap:wrap; gap:6px 14px; justify-content:center;
+  margin-top:20px; font-size:11.5px; color:var(--text2);
+}
+.auth-meta span.dot{ color:var(--text3); }
+
+/* ── Privacy bar ── */
+.privacy-bar{
+  position:fixed; left:0; right:0; bottom:0; z-index:1000;
+  background:linear-gradient(90deg,rgba(94,19,130,.96),rgba(30,136,229,.96));
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  color:#fff; padding:10px 20px; font-size:12.5px; line-height:1.45;
+  box-shadow:0 -4px 20px rgba(0,0,0,.18);
+}
+.privacy-bar .pc{ max-width:1280px; margin:0 auto; display:flex; align-items:center; gap:10px; }
+.privacy-bar .lock{ font-size:14px; flex-shrink:0; }
+.privacy-bar strong{ font-weight:700; }
+
+/* ── Toast ── */
+.auth-toast{
+  position:fixed; top:24px; left:50%; transform:translateX(-50%);
+  z-index:10000;
+  background:#1a1d2e; color:#fff;
+  padding:12px 22px; border-radius:10px;
+  font-size:13.5px; font-weight:600;
+  box-shadow:0 8px 24px rgba(0,0,0,.25);
+  animation:toastIn .3s ease;
+}
+@keyframes toastIn{ from{opacity:0;transform:translate(-50%,-12px)} to{opacity:1;transform:translate(-50%,0)} }
+.auth-toast.success{ background:linear-gradient(135deg,#7B1FA2,#1E88E5); }
+
+@media(max-width:520px){
+  .auth-card{ padding:32px 24px 26px; border-radius:20px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ LOGIN GATE ═══ -->
+<div id="login-gate" class="login-gate" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+  <div class="bg-shapes" aria-hidden="true">
+    <span class="shape s1"></span>
+    <span class="shape s2"></span>
+    <span class="shape s3"></span>
+  </div>
+  <div class="grid-overlay" aria-hidden="true"></div>
+
+  <div class="auth-card">
+    <div class="auth-brand">
+      <img class="auth-logo" src="../assets/Image_20260513001106_704_33.png" alt="CUHK-Shenzhen logo"/>
+      <div>
+        <div class="auth-eyebrow">CUHK-Shenzhen · Academic Advisory</div>
+        <h1 class="auth-title" id="auth-title">Undergraduate Study Dashboard</h1>
+        <p class="auth-subtitle">A privacy-first skill profiling &amp; course planning tool for CUHK-Shenzhen undergraduates.</p>
+      </div>
+    </div>
+
+    <div class="role-toggle student" role="tablist" aria-label="Select role">
+      <button type="button" class="role-btn active" data-role="student" role="tab" aria-selected="true">
+        🎓 I am a Student
+      </button>
+      <button type="button" class="role-btn" data-role="advisor" role="tab" aria-selected="false">
+        👔 Academic Advisor
+      </button>
+      <span class="role-indicator" aria-hidden="true"></span>
+    </div>
+
+    <form id="auth-form" class="auth-form" novalidate>
+      <label class="auth-field">
+        <span>Full Name</span>
+        <input type="text" name="fullName" id="auth-name"
+               placeholder="e.g. Zhang San"
+               autocomplete="name" required minlength="2"/>
+      </label>
+
+      <label class="auth-field">
+        <span>Campus Email</span>
+        <input type="email" name="email" id="auth-email"
+               placeholder="yourname@link.cuhk.edu.cn"
+               autocomplete="email" required/>
+        <small class="field-hint" id="email-hint">
+          Must end with <code>@link.cuhk.edu.cn</code>
+        </small>
+      </label>
+
+      <button type="submit" class="auth-submit" id="auth-submit">
+        <span class="label">Continue with CUHK SSO</span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </button>
+    </form>
+
+    <div class="auth-meta">
+      <span>🔐 SSO Verified</span>
+      <span class="dot">·</span>
+      <span>📊 Local-First Privacy</span>
+      <span class="dot">·</span>
+      <span>⚡ Zero Server Storage</span>
+    </div>
+  </div>
+</div>
+<!-- /LOGIN GATE -->
+
+<!-- ═══ PRIVACY BAR ═══ -->
+<footer class="privacy-bar" role="contentinfo">
+  <div class="pc">
+    <span class="lock" aria-hidden="true">🔒</span>
+    <span class="pt">
+      <strong>Privacy Commitment:</strong>
+      All data processing is performed locally on your device. Nothing is ever uploaded to our servers.
+    </span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var ROLE_RULES = {
+    student: {
+      label  :'Student',
+      domain :'@link.cuhk.edu.cn',
+      regex  :/^[a-zA-Z0-9._%+-]+@link\.cuhk\.edu\.cn$/,
+      hint   :'Must end with <code>@link.cuhk.edu.cn</code>',
+      cta    :'Continue with CUHK SSO',
+      welcome:'Welcome back, {name}! Loading your dashboard…'
+    },
+    advisor: {
+      label  :'Academic Advisor',
+      domain :'@cuhk.edu.cn',
+      regex  :/^[a-zA-Z0-9._%+-]+@cuhk\.edu\.cn$/,
+      hint   :'Must end with <code>@cuhk.edu.cn</code> (faculty domain)',
+      cta    :'Sign in with CUHK SSO',
+      welcome:'Welcome, {name}. Opening the advisor view…'
+    }
+  };
+
+  var SESSION_KEY = 'cuhksz_session';
+
+  var gate       = document.getElementById('login-gate');
+  var toggle     = document.querySelector('.role-toggle');
+  var roleBtns   = document.querySelectorAll('.role-btn');
+  var form       = document.getElementById('auth-form');
+  var nameInput  = document.getElementById('auth-name');
+  var emailInput = document.getElementById('auth-email');
+  var emailHint  = document.getElementById('email-hint');
+  var submitBtn  = document.getElementById('auth-submit');
+  var ctaLabel   = submitBtn.querySelector('.label');
+  var currentRole = 'student';
+
+  function loadSession(){
+    try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); }
+    catch(e){ return null; }
+  }
+  function saveSession(data){
+    localStorage.setItem(SESSION_KEY, JSON.stringify(data));
+  }
+
+  function setRole(role){
+    if (!ROLE_RULES[role]) return;
+    currentRole = role;
+    toggle.classList.toggle('advisor', role === 'advisor');
+    toggle.classList.toggle('student', role === 'student');
+    roleBtns.forEach(function(b){
+      var isActive = b.dataset.role === role;
+      b.classList.toggle('active', isActive);
+      b.setAttribute('aria-selected', isActive);
+    });
+    var rule = ROLE_RULES[role];
+    emailInput.placeholder = (role === 'student' ? 'yourname' : 'faculty') + rule.domain;
+    emailHint.innerHTML = rule.hint;
+    emailHint.classList.remove('error');
+    ctaLabel.textContent = rule.cta;
+    if (emailInput.value) validateEmail(true);
+  }
+  roleBtns.forEach(function(btn){
+    btn.addEventListener('click', function(){ setRole(btn.dataset.role); });
+  });
+
+  function validateEmail(silent){
+    var value = emailInput.value.trim();
+    var rule  = ROLE_RULES[currentRole];
+    if (!value){
+      if (!silent) showHintError('Please enter your campus email.');
+      return false;
+    }
+    if (!rule.regex.test(value)){
+      if (!silent) showHintError('Please use a valid CUHK-Shenzhen email (' + rule.domain + ').');
+      return false;
+    }
+    emailHint.innerHTML = rule.hint;
+    emailHint.classList.remove('error');
+    return true;
+  }
+  function showHintError(msg){
+    emailHint.textContent = '⚠ ' + msg;
+    emailHint.classList.add('error');
+  }
+  emailInput.addEventListener('blur', function(){ if (emailInput.value) validateEmail(); });
+  emailInput.addEventListener('input', function(){
+    if (emailHint.classList.contains('error')) validateEmail();
+  });
+
+  function toast(msg, type){
+    var t = document.createElement('div');
+    t.className = 'auth-toast' + (type ? ' ' + type : '');
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function(){ t.style.opacity = '0'; t.style.transition = 'opacity .3s'; }, 2400);
+    setTimeout(function(){ t.remove(); }, 2800);
+  }
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var name = nameInput.value.trim();
+    if (name.length < 2){
+      nameInput.focus();
+      toast('Please enter your full name.');
+      return;
+    }
+    if (!validateEmail()){
+      emailInput.focus();
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.classList.add('loading');
+    ctaLabel.textContent = 'Verifying your identity';
+
+    setTimeout(function(){
+      var session = {
+        role   : currentRole,
+        name   : name,
+        email  : emailInput.value.trim(),
+        loginAt: new Date().toISOString()
+      };
+      saveSession(session);
+
+      toast(ROLE_RULES[currentRole].welcome.replace('{name}', name.split(' ')[0]), 'success');
+      setTimeout(function(){
+        gate.classList.add('is-leaving');
+        setTimeout(function(){
+          location.href = 'student_dashboard_index.html';
+        }, 460);
+      }, 700);
+    }, 900);
+  });
+
+  // Auto-skip if already signed in
+  var existing = loadSession();
+  if (existing && existing.name){
+    location.replace('student_dashboard_index.html');
+  }
+})();
+</script>
+</body>
+</html>
