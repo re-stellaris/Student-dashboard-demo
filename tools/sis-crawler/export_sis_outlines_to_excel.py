@@ -179,8 +179,7 @@ def normalize_manifest_paths(root: Path, manifest_rows: list[dict]) -> list[dict
 
 
 def build_rows(root: Path) -> list[dict]:
-    manifest_rows = normalize_manifest_paths(root, rows_from_manifest(root))
-    source_rows = manifest_rows or rows_from_folders(root)
+    source_rows = select_current_rows(root)
     out_rows = []
 
     for m in source_rows:
@@ -358,28 +357,127 @@ def write_xlsx(path: Path, sheets: list[tuple[str, list[dict]]]) -> None:
         )
 
 
-def main() -> int:
-    root = Path(sys.argv[1]) if len(sys.argv) >= 2 else DEFAULT_ROOT
-    out = Path(sys.argv[2]) if len(sys.argv) >= 3 else DEFAULT_OUT
 
-    if not root.exists():
-        print(f"ERROR: cannot find {root.resolve()}")
-        print("Run this script from the ToDesk folder, or pass the sis_course_outlines folder as the first argument.")
-        return 1
+# This export is specifically for the October 2026 refresh.
+SINCE = '2026-10-04'
+EXCLUDE = {'DDA5002', 'DDA5003', 'MFE5300'}
 
-    rows = build_rows(root)
+def select_current_rows(root):
+    from datetime import datetime
+    from collections import Counter
+    cutoff = datetime.strptime(SINCE, '%Y-%m-%d').timestamp()
+    counts = Counter()
+    catalog = {}
+    for p in root.glob('letter_*/course_list_letter_*.json'):
+        if p.stat().st_mtime < cutoff:
+            continue
+        data = json.loads(p.read_text(encoding='utf-8-sig'))
+        for item in data:
+            code = item.get('courseCode', '')
+            if code:
+                catalog[code] = {**item, 'letter': p.parent.name.replace('letter_', '')}
+    if not catalog:
+        raise ValueError('No current course lists found. Check --since and input folder.')
+    latest = {}
+    for row in rows_from_manifest(root):
+        latest[row.get('course_code', '')] = row
+    if not latest:
+        raise ValueError('Missing manifests: cannot verify latest crawl status.')
+    selected = {}
+    for row in rows_from_folders(root):
+        code = row['course_code']
+        if code in EXCLUDE:
+            counts['excluded_error_courses'] += 1
+            continue
+        if code not in catalog or row['course_title'] != catalog[code].get('courseTitle', ''):
+            counts['not_in_current_catalog'] += 1
+            continue
+        detail = Path(row['detail_json'])
+        outline = Path(row['outline_json']) if row['outline_json'] else None
+        if detail.stat().st_mtime < cutoff:
+            counts['old_detail'] += 1
+            continue
+        status = latest.get(code, {}).get('status', 'detail_only')
+        valid_outline = (status == 'saved_outline' and outline is not None
+                         and outline.stat().st_mtime >= cutoff and bool(read_json(outline)))
+        row['status'] = 'saved_outline' if valid_outline else (
+            'missing_current_outline' if status == 'saved_outline' else status)
+        if not valid_outline:
+            row['outline_json'] = ''
+        terms = Path(row['terms_text']) if row['terms_text'] else None
+        if not valid_outline or not terms or terms.stat().st_mtime < cutoff:
+            row['terms_text'] = ''
+            row['terms_status'] = ''
+        score = (detail.stat().st_mtime_ns, str(detail))
+        if code in selected:
+            counts['duplicate_current_code'] += 1
+        if code not in selected or score > selected[code][0]:
+            selected[code] = (score, row)
+    # The current catalog defines All Courses, including entries without files.
+    for code, item in catalog.items():
+        if code in EXCLUDE or code in selected:
+            continue
+        selected[code] = (None, {
+            'letter': item['letter'], 'subject': item.get('subject', ''),
+            'course_code': code, 'course_number': item.get('courseNumber', ''),
+            'course_title': item.get('courseTitle', ''),
+            'status': 'no_current_detail', 'detail_json': '', 'outline_json': '',
+            'terms_text': '', 'terms_status': '',
+        })
+        counts['catalog_only'] += 1
+    print('Filter counts:', dict(sorted(counts.items())))
+    print('Current catalog unique codes:', len(catalog))
+    return [selected[code][1] for code in sorted(selected)]
+
+def main():
+    import argparse
+    import os
+    import shutil
+    import tempfile
+    from datetime import datetime
+    global SINCE
+    parser = argparse.ArgumentParser(description='Export all current SIS courses, partitioned by outline availability, one row per course code. Uses only Python standard library.')
+    parser.add_argument('root', nargs='?', type=Path, default=Path(__file__).resolve().parent / DEFAULT_ROOT)
+    parser.add_argument('out', nargs='?', type=Path, default=Path(__file__).resolve().parent / DEFAULT_OUT)
+    parser.add_argument('--since', default=SINCE, help='Crawl start date YYYY-MM-DD (default: 2026-10-04). File modification times must be preserved.')
+    parser.add_argument('--dry-run', action='store_true', help='Check and count only; do not write Excel.')
+    args = parser.parse_args()
+    SINCE = args.since
+    rows = build_rows(args.root.resolve())
+    assert len(rows) == len({r['course_code'] for r in rows})
     if not rows:
-        print(f"ERROR: found no course rows under {root.resolve()}")
-        print("Expected folders like: outputs/sis_course_outlines/letter_A/courses/ACT2111_xxx/detail.json")
-        return 1
-
-    with_outline = [r for r in rows if r.get("description_english") or r.get("learning_outcomes")]
-    missing = [r for r in rows if not (r.get("description_english") or r.get("learning_outcomes"))]
-    write_xlsx(out, [("All Courses", rows), ("With Outline", with_outline), ("Missing Outline", missing)])
-    print(f"Saved: {out.resolve()}")
-    print(f"Rows: {len(rows)} total, {len(with_outline)} with outline, {len(missing)} missing/ghost/detail-only")
+        raise ValueError('No eligible courses found; output was not changed.')
+    with_outline = [r for r in rows if r['status'] == 'saved_outline']
+    missing = [r for r in rows if r['status'] != 'saved_outline']
+    print(f'Rows: {len(rows)} total, {len(with_outline)} with outline, {len(missing)} missing outline')
+    for letter in sorted({r['letter'] for r in rows}):
+        a = sum(r['letter'] == letter for r in rows)
+        b = sum(r['letter'] == letter for r in with_outline)
+        print(f'{letter}: {a} total, {b} with outline, {a-b} missing outline')
+    if args.dry_run:
+        print('Dry run complete. No files written.')
+        return 0
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    fd, temp = tempfile.mkstemp(suffix='.xlsx', dir=args.out.parent)
+    os.close(fd)
+    try:
+        # Retain the existing sheet names for downstream compatibility.
+        write_xlsx(Path(temp), [('All Courses', rows), ('With Outline', with_outline), ('Missing Outline', missing)])
+        if args.out.exists():
+            backup = args.out.with_name(args.out.stem + '.backup-' + datetime.now().strftime('%Y%m%d-%H%M%S-%f') + args.out.suffix)
+            shutil.copy2(args.out, backup)
+            print('Backup:', backup.resolve())
+        os.replace(temp, args.out)
+    finally:
+        if os.path.exists(temp):
+            os.unlink(temp)
+    print('Saved:', args.out.resolve())
     return 0
 
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+if __name__ == '__main__':
+    try:
+        raise SystemExit(main())
+    except Exception as exc:
+        print(f'ERROR: {exc}', file=sys.stderr)
+        print('If Excel is open, close it before exporting.', file=sys.stderr)
+        raise SystemExit(1)
