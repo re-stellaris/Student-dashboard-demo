@@ -1,0 +1,73 @@
+/* 教育平台 · 导师看板样式
+ * 源自 legacy/aa_dashboard_v2.html 的 <style> 块（视觉 1:1）
+ * 仅改动：:root / body -> .sp-root
+ */
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+.sp-root{ background: #f4f6f9; color: #1f2937; }
+    .app { display: flex; min-height: 100vh; }
+    .sidebar { width: 240px; background: #0f2747; color: white; padding: 24px 18px; position: fixed; left: 0; top: 0; bottom: 0; transition: width .2s ease; overflow: hidden; }
+    .logo-row { display:flex; align-items:center; justify-content:space-between; margin-bottom: 36px; }
+    .logo { font-size: 20px; font-weight: 700; white-space: nowrap; }
+    .icon-btn { width:34px; height:34px; border:1px solid #d1d5db; background:#fff; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; }
+    .icon-btn.dark { background:#1d4ed8; border-color:#1d4ed8; color:#fff; }
+    .icon-btn svg { width:16px; height:16px; }
+    .nav-item { padding: 13px 14px; border-radius: 10px; margin-bottom: 8px; cursor: pointer; color: #dbeafe; }
+    .nav-item:hover, .nav-item.active { background: #1d4ed8; color: white; }
+    .main { margin-left: 240px; width: calc(100% - 240px); padding: 24px 32px; transition: margin-left .2s ease, width .2s ease; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .header-actions { display:flex; gap:10px; }
+    .app.sidebar-collapsed .sidebar { width:72px; padding:20px 10px; }
+    .app.sidebar-collapsed .logo { display:none; }
+    .app.sidebar-collapsed .main { margin-left:72px; width:calc(100% - 72px); }
+    .app.sidebar-collapsed .nav-item { text-align:center; padding:12px 8px; font-size:11px; }
+    .page { display: none; }
+    .page.active { display: block; }
+    h1 { font-size: 28px; margin-bottom: 8px; }
+    .subtitle { color: #6b7280; margin-bottom: 24px; line-height: 1.5; font-size: 14px; }
+    .filters { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    select, input, textarea { border: 1px solid #d1d5db; border-radius: 10px; padding: 10px 12px; background: white; font-size: 14px; }
+    select:disabled, input:disabled { background: #f9fafb; color: #6b7280; cursor: not-allowed; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+    .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 8px 20px rgba(15, 39, 71, 0.06); border: 1px solid #e5e7eb; margin-bottom: 22px; }
+    .card h2 { font-size: 20px; margin-bottom: 16px; }
+    .card h3 { font-size: 15px; margin-bottom: 12px; color: #374151; }
+    .metric-value { font-size: 32px; font-weight: 700; margin-bottom: 6px; }
+    .metric-note { color: #6b7280; font-size: 13px; }
+    .chart-box { height: 240px; border-left: 2px solid #9ca3af; border-bottom: 2px solid #9ca3af; display: flex; align-items: flex-end; gap: 28px; padding: 16px 18px 0; margin: 10px 0 30px; background-image: linear-gradient(#eef2f7 1px, transparent 1px); background-size: 100% 48px; }
+    .bar-wrap { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; flex: 1; }
+    .bar { width: 58px; border-radius: 8px 8px 0 0; background: #3b82f6; }
+    .bar.green { background: #3ba64a; }
+    .axis-label { font-size: 12px; color: #6b7280; margin-top: 8px; white-space: nowrap; }
+    .line-chart { height: 240px; border-left: 2px solid #9ca3af; border-bottom: 2px solid #9ca3af; position: relative; background-image: linear-gradient(#eef2f7 1px, transparent 1px), linear-gradient(90deg, #eef2f7 1px, transparent 1px); background-size: 100% 48px, 25% 100%; margin-bottom: 8px; }
+    .trend-line { position: absolute; left: 40px; top: 52px; width: 84%; height: 110px; border-top: 4px solid #3b82f6; transform: rotate(9deg); transform-origin: left center; opacity: 0.75; }
+    .point { position: absolute; width: 12px; height: 12px; background: #3b82f6; border-radius: 50%; }
+    .progress-line { height: 10px; background: #e5e7eb; border-radius: 999px; margin: 12px 0 6px; overflow: hidden; }
+    .progress-fill { height: 100%; background: #111827; border-radius: 999px; }
+    .course-row { display: grid; grid-template-columns: 160px 1fr; align-items: center; margin: 12px 0; gap: 12px; font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 13px 10px; border-bottom: 1px solid #e5e7eb; font-size: 14px; vertical-align: middle; }
+    th { color: #6b7280; font-weight: 600; }
+    .badge { display: inline-block; padding: 5px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; margin-right: 6px; }
+    .red { background: #fee2e2; color: #b91c1c; }
+    .orange-badge { background: #ffedd5; color: #c2410c; }
+    .blue { background: #dbeafe; color: #1d4ed8; }
+    .green-badge { background: #dcfce7; color: #15803d; }
+    .yellow { background: #fef3c7; color: #a16207; }
+    .btn { border: none; background: #1d4ed8; color: white; padding: 8px 12px; border-radius: 9px; cursor: pointer; font-size: 13px; margin-right: 6px; }
+    .btn.secondary { background: #e5e7eb; color: #1f2937; }
+    .risk-matrix { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .risk-card { border-radius: 14px; padding: 16px; border: 1px solid #e5e7eb; background: #f9fafb; }
+    .risk-card strong { display: block; font-size: 18px; margin: 8px 0 6px; }
+    .risk-card p { font-size: 13px; color: #6b7280; line-height: 1.4; }
+    .assistant-box { display: flex; gap: 10px; margin-top: 12px; }
+    .assistant-box input { flex: 1; }
+    .student-layout { display: grid; grid-template-columns: 42% 58%; gap: 22px; }
+    .profile-section { margin-bottom: 18px; }
+    .profile-section ul { padding-left: 20px; line-height: 1.8; color: #4b5563; }
+    .student-mini-line { height: 135px; border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; padding: 8px; overflow: hidden; }
+    .modal-mask { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); align-items: center; justify-content: center; z-index: 99; }
+    .modal { width: 520px; background: white; border-radius: 18px; padding: 24px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25); }
+    .modal textarea { width: 100%; min-height: 180px; margin: 16px 0; line-height: 1.6; }
+    .logic-list { line-height: 1.9; padding-left: 20px; color: #374151; font-size: 14px; }
+    .sm-row:hover { background: #f0f9ff !important; }
+    @media (max-width: 1100px) { .grid-2, .student-layout, .risk-matrix { grid-template-columns: 1fr; } .main { padding: 18px; } }

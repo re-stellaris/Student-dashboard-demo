@@ -1,0 +1,287 @@
+# =====================================================================
+# 若依教育平台（RuoYi-Vue v3.9.2 + ruoyi-education）一键部署编排
+# ---------------------------------------------------------------------
+# 使用方式（务必在 deploy/ 目录下执行，docker compose 会读取同目录的 .env）：
+#   cd deploy
+#   cp .env.example .env      # 然后编辑 .env（至少改 DB_PASSWORD / DB_ROOT_PASSWORD
+#                             #   / REDIS_PASSWORD / TOKEN_SECRET）
+#   docker compose up -d --build
+#
+# 设计要点：
+#   1. 只有 frontend 对外发布端口（${HTTP_PORT:-80}:80），mysql / redis / backend
+#      仅存在于 ruoyi-net 内部桥接网络，不映射宿主端口（调试见各服务下被注释的 ports）。
+#   2. 不使用任何硬编码口令：必需的密钥全部用 ${VAR:?错误提示} 形式传入，
+#      缺失或为空时 compose 会直接报错退出，而不是悄悄用弱默认值启动。
+#   3. 数据库初始化脚本直接 bind mount backend/sql 下的真实文件（单一来源），
+#      严禁在 deploy/ 下复制 SQL 副本；见 deploy/mysql/init/README.md。
+#   4. 初始化脚本只在 MySQL 数据目录为空（首次启动）时执行；
+#      重新导入的方法见 deploy/README.md「重新导入初始化 SQL」。
+# =====================================================================
+name: ruoyi-edu
+
+# 统一日志轮转，避免长时间运行把宿主磁盘写满
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "50m"
+    max-file: "3"
+
+services:
+  # -------------------------------------------------------------------
+  # MySQL 8.0：若依基础表 + 教育业务表
+  # -------------------------------------------------------------------
+  mysql:
+    image: mysql:8.0
+    container_name: ruoyi-edu-mysql
+    restart: unless-stopped
+    command:
+      # 字符集：全库 utf8mb4（中文 + emoji + 课程名英文混排都安全）
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_general_ci
+      # 忽略客户端握手字符集，避免旧客户端把连接降级成 latin1
+      - --skip-character-set-client-handshake
+      # 时区与后端 GMT+8 对齐，避免 sysdate() 与 JVM 时间漂移
+      - --default-time-zone=+08:00
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?请在 deploy/.env 中设置 DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME:-education_db}
+      MYSQL_USER: ${DB_USER:-ruoyi}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?请在 deploy/.env 中设置 DB_PASSWORD}
+    volumes:
+      - type: volume
+        source: mysql_data
+        target: /var/lib/mysql
+      # 备份演练目录（mysqldump 输出到 /backups，见 README「备份与恢复演练」）
+      - type: bind
+        source: ./backups
+        target: /backups
+      # ---------------------------------------------------------------
+      # 初始化脚本：按文件名字典序执行，编号即执行顺序。
+      # 使用单文件 bind mount（type: bind + create_host_path: false），
+      # 源文件缺失时 docker compose 会直接报错，而不是偷偷创建一个同名目录。
+      # ---------------------------------------------------------------
+      # 01 若依基础表（sys_*）
+      - type: bind
+        source: ../backend/sql/ry_20260417.sql
+        target: /docker-entrypoint-initdb.d/01_ry_20260417.sql
+        read_only: true
+        bind:
+          create_host_path: false
+      # 02 定时任务表（QRTZ_*，ruoyi-quartz 需要）
+      - type: bind
+        source: ../backend/sql/quartz.sql
+        target: /docker-entrypoint-initdb.d/02_quartz.sql
+        read_only: true
+        bind:
+          create_host_path: false
+      # 03 教育业务表结构（edu_*）
+      - type: bind
+        source: ../backend/sql/edu/V1__edu_schema.sql
+        target: /docker-entrypoint-initdb.d/03_V1__edu_schema.sql
+        read_only: true
+        bind:
+          create_host_path: false
+      # 04 角色 / 演示账号 / 菜单与按钮权限
+      - type: bind
+        source: ../backend/sql/edu/V2__edu_permissions.sql
+        target: /docker-entrypoint-initdb.d/04_V2__edu_permissions.sql
+        read_only: true
+        bind:
+          create_host_path: false
+      #
+      # 05~08 演示数据（V3~V6）：由 pipeline/course_import/build_edu_seed.py 生成。
+      # 生成命令：python pipeline/course_import/build_edu_seed.py --all
+      # 这四个文件已随仓库提交；若被删除，docker compose 会因 bind 源缺失而报错，
+      # 此时先跑上面的命令再启动。
+      #
+      - type: bind
+        source: ../backend/sql/edu/V3__edu_seed_course.sql
+        target: /docker-entrypoint-initdb.d/05_V3__edu_seed_course.sql
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ../backend/sql/edu/V4__edu_seed_curriculum.sql
+        target: /docker-entrypoint-initdb.d/06_V4__edu_seed_curriculum.sql
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ../backend/sql/edu/V5__edu_seed_student.sql
+        target: /docker-entrypoint-initdb.d/07_V5__edu_seed_student.sql
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ../backend/sql/edu/V6__edu_seed_competency.sql
+        target: /docker-entrypoint-initdb.d/08_V6__edu_seed_competency.sql
+        read_only: true
+        bind:
+          create_host_path: false
+    # 默认不对外暴露数据库端口。需要在宿主上用客户端连接时，取消下面注释
+    # （仅监听回环地址，避免暴露到局域网）。
+    # ports:
+    #   - "127.0.0.1:3306:3306"
+    healthcheck:
+      # 初始化期间 MySQL 只在 socket 上监听，TCP ping 必然失败，
+      # 因此该健康检查能正确区分「初始化中」与「已就绪」。
+      test: ["CMD-SHELL", 'mysqladmin ping -h 127.0.0.1 -u root -p"$$MYSQL_ROOT_PASSWORD" --silent']
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    logging: *default-logging
+    networks:
+      - ruoyi-net
+
+  # -------------------------------------------------------------------
+  # Redis 7：若依 Token / 缓存 / 验证码 / 限流存储
+  # -------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: ruoyi-edu-redis
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --requirepass
+      - ${REDIS_PASSWORD:?请在 deploy/.env 中设置 REDIS_PASSWORD}
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      # 仅供 healthcheck 使用，redis-server 的密码来自上面的 command
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?请在 deploy/.env 中设置 REDIS_PASSWORD}
+    volumes:
+      - type: volume
+        source: redis_data
+        target: /data
+    # 默认不发布端口；调试时取消注释（仅回环）。
+    # ports:
+    #   - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD-SHELL", 'redis-cli --no-auth-warning -a "$$REDIS_PASSWORD" ping | grep -q PONG']
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    logging: *default-logging
+    networks:
+      - ruoyi-net
+
+  # -------------------------------------------------------------------
+  # 后端：Spring Boot 4.1.2 / Java 21（ruoyi-admin.jar）
+  # -------------------------------------------------------------------
+  backend:
+    build:
+      # 构建上下文是 backend/ 目录（不是仓库根），因此 Dockerfile 路径要相对
+      # 上下文来写：../deploy/backend.Dockerfile 指向 deploy/ 下的真实文件。
+      context: ../backend
+      dockerfile: ../deploy/backend.Dockerfile
+    image: ruoyi-edu/backend:3.9.2
+    container_name: ruoyi-edu-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      JAVA_OPTS: ${JAVA_OPTS:--Xms512m -Xmx1024m -XX:+UseG1GC}
+      # druid 必须在前面：后加载的 profile 优先级更高，docker 才能覆盖数据源
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-druid,docker}
+      # --- 数据源（application-docker.yml 消费） ---
+      DB_HOST: ${DB_HOST:-mysql}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-education_db}
+      DB_USER: ${DB_USER:-ruoyi}
+      DB_PASSWORD: ${DB_PASSWORD:?请在 deploy/.env 中设置 DB_PASSWORD}
+      DB_USE_SSL: ${DB_USE_SSL:-false}
+      # --- 安全基线：默认关闭 Druid 监控台与 Swagger 文档 ---
+      DRUID_STAT_VIEW_ENABLED: ${DRUID_STAT_VIEW_ENABLED:-false}
+      DRUID_LOGIN_USERNAME: ${DRUID_LOGIN_USERNAME:-ruoyi}
+      DRUID_LOGIN_PASSWORD: ${DRUID_LOGIN_PASSWORD:-ChangeMe_Druid_123}
+      DRUID_ALLOW: ${DRUID_ALLOW:-172.16.0.0/12}
+      SPRINGDOC_ENABLED: ${SPRINGDOC_ENABLED:-false}
+      # --- Redis ---
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_DB: ${REDIS_DB:-0}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?请在 deploy/.env 中设置 REDIS_PASSWORD}
+      # --- 应用密钥 / 上传目录 ---
+      TOKEN_SECRET: ${TOKEN_SECRET:?请在 deploy/.env 中设置 TOKEN_SECRET}
+      TOKEN_EXPIRE_TIME: ${TOKEN_EXPIRE_TIME:-30}
+      RUOYI_PROFILE: ${RUOYI_PROFILE:-/app/data/uploadPath}
+    volumes:
+      # 上传文件（头像、附件、导出物）持久化
+      - type: volume
+        source: backend_uploads
+        target: /app/data
+      # logback.xml 把日志写到 /home/ruoyi/logs（镜像里已建好目录并 chown 给非 root 用户）
+      - type: volume
+        source: backend_logs
+        target: /home/ruoyi/logs
+    # 只在内部网络暴露；需要本机直接访问后端（例如调试 swagger）时取消注释
+    expose:
+      - "8080"
+    # ports:
+    #   - "127.0.0.1:8080:8080"
+    # 健康检查在 backend.Dockerfile 里用 HEALTHCHECK 定义
+    # （curl -fsS http://127.0.0.1:8080/captchaImage，本应用没有引入 actuator）。
+    logging: *default-logging
+    networks:
+      - ruoyi-net
+
+  # -------------------------------------------------------------------
+  # 前端：Nginx 静态站点 + /prod-api、/api 反向代理
+  # -------------------------------------------------------------------
+  frontend:
+    build:
+      # 前端构建上下文必须是 frontend/ 目录本身（npm ci / npm run build:prod 都在这里跑）。
+      # dockerfile 用相对路径指向 deploy/ 下的 Dockerfile：context=../frontend，
+      # 因此 ../deploy/frontend.Dockerfile == deploy/frontend.Dockerfile。
+      context: ../frontend
+      dockerfile: ../deploy/frontend.Dockerfile
+      # nginx 配置位于 frontend/ 之外，用命名构建上下文（BuildKit）注入，
+      # 在 frontend.Dockerfile 里以 COPY --from=nginx_conf 使用。
+      additional_contexts:
+        nginx_conf: ../deploy/nginx
+    image: ruoyi-edu/frontend:3.9.2
+    container_name: ruoyi-edu-frontend
+    restart: unless-stopped
+    depends_on:
+      # 用 service_started：nginx 起来后即使后端还在启动也只会短暂 502，
+      # 不会让整个栈卡在等待健康检查上。
+      backend:
+        condition: service_started
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging: *default-logging
+    networks:
+      - ruoyi-net
+
+volumes:
+  mysql_data:
+    name: ruoyi-edu-mysql-data
+  redis_data:
+    name: ruoyi-edu-redis-data
+  backend_uploads:
+    name: ruoyi-edu-uploads
+  backend_logs:
+    name: ruoyi-edu-logs
+
+networks:
+  ruoyi-net:
+    name: ruoyi-edu-net
+    driver: bridge

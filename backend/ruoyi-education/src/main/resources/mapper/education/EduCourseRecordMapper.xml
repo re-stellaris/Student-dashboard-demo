@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.education.enrollment.mapper.EduCourseRecordMapper">
+
+    <resultMap type="com.ruoyi.education.enrollment.domain.EduCourseRecord" id="EduCourseRecordResult">
+        <result property="recordId"     column="record_id"     />
+        <result property="studentId"    column="student_id"    />
+        <result property="courseId"     column="course_id"     />
+        <result property="courseCode"   column="course_code"   />
+        <result property="courseTitle"  column="course_title"  />
+        <result property="termId"       column="term_id"       />
+        <result property="grade"        column="grade"         />
+        <result property="score"        column="score"         />
+        <result property="units"        column="units"         />
+        <result property="category"     column="category"      />
+        <result property="passed"       column="passed"        />
+        <result property="recordStatus" column="record_status" />
+        <result property="source"       column="source"        />
+        <result property="termCode"     column="term_code"     />
+        <result property="termName"     column="term_name"     />
+        <result property="createBy"     column="create_by"     />
+        <result property="createTime"   column="create_time"   />
+        <result property="updateBy"     column="update_by"     />
+        <result property="updateTime"   column="update_time"   />
+    </resultMap>
+
+    <!-- 快照为空时用课程目录回填课程名与学分 -->
+    <sql id="selectRecordVo">
+        select r.record_id, r.student_id, r.course_id, r.course_code,
+               case when r.course_title is null or r.course_title = '' then c.title_zh else r.course_title end as course_title,
+               r.term_id, r.grade, r.score,
+               case when r.units is null or r.units = 0 then c.credits else r.units end as units,
+               r.category, r.passed, r.record_status, r.source,
+               t.term_code, t.term_name,
+               r.create_by, r.create_time, r.update_by, r.update_time
+        from edu_course_record r
+        left join edu_course c on c.course_id = r.course_id
+        left join edu_term t on t.term_id = r.term_id
+    </sql>
+
+    <select id="selectRecordList" parameterType="com.ruoyi.education.enrollment.domain.EduCourseRecord" resultMap="EduCourseRecordResult">
+        <include refid="selectRecordVo"/>
+        <where>
+            r.del_flag = '0'
+            <if test="studentId != null">
+                and r.student_id = #{studentId}
+            </if>
+            <if test="termId != null">
+                and r.term_id = #{termId}
+            </if>
+            <if test="termCode != null and termCode != ''">
+                and t.term_code = #{termCode}
+            </if>
+            <if test="category != null and category != ''">
+                and r.category = #{category}
+            </if>
+            <if test="recordStatus != null and recordStatus != ''">
+                and r.record_status = #{recordStatus}
+            </if>
+            <if test="passed != null and passed != ''">
+                and r.passed = #{passed}
+            </if>
+            <if test="courseCode != null and courseCode != ''">
+                and r.course_code like concat('%', #{courseCode}, '%')
+            </if>
+        </where>
+        order by t.term_code desc, r.record_id desc
+    </select>
+
+    <select id="selectRecordById" parameterType="Long" resultMap="EduCourseRecordResult">
+        <include refid="selectRecordVo"/>
+        where r.record_id = #{recordId}
+    </select>
+
+    <select id="selectByStudentId" parameterType="Long" resultMap="EduCourseRecordResult">
+        <include refid="selectRecordVo"/>
+        where r.del_flag = '0' and r.student_id = #{studentId}
+        order by t.term_code desc, r.record_id desc
+    </select>
+
+    <select id="selectPassedCourseIds" parameterType="Long" resultType="java.lang.Long">
+        select r.course_id
+        from edu_course_record r
+        where r.student_id = #{studentId}
+          and r.passed = '1'
+          and r.record_status = 'COMPLETED'
+          and r.del_flag = '0'
+          and r.course_id is not null
+    </select>
+
+    <select id="selectCompletedRecords" parameterType="Long" resultMap="EduCourseRecordResult">
+        <include refid="selectRecordVo"/>
+        where r.del_flag = '0'
+          and r.student_id = #{studentId}
+          and r.passed = '1'
+          and r.record_status = 'COMPLETED'
+        order by t.term_code asc, r.record_id asc
+    </select>
+
+    <select id="selectCategorySummary" parameterType="Long" resultType="com.ruoyi.education.enrollment.dto.CreditCategoryRow">
+        select r.category as category,
+               sum(case when r.units is null or r.units = 0 then coalesce(c.credits, 0) else r.units end) as units
+        from edu_course_record r
+        left join edu_course c on c.course_id = r.course_id
+        where r.student_id = #{studentId}
+          and r.passed = '1'
+          and r.record_status = 'COMPLETED'
+          and r.del_flag = '0'
+        group by r.category
+        order by r.category asc
+    </select>
+
+    <select id="selectTermGradeRows" parameterType="Long" resultType="com.ruoyi.education.enrollment.dto.TermGradeRow">
+        select t.term_code as termCode,
+               t.term_name as termName,
+               r.grade     as grade,
+               r.score     as score,
+               case when r.units is null or r.units = 0 then coalesce(c.credits, 0) else r.units end as units
+        from edu_course_record r
+        left join edu_course c on c.course_id = r.course_id
+        left join edu_term t on t.term_id = r.term_id
+        where r.student_id = #{studentId}
+          and r.passed = '1'
+          and r.record_status = 'COMPLETED'
+          and r.del_flag = '0'
+          and t.term_code is not null
+        order by t.term_code asc, r.record_id asc
+    </select>
+
+    <insert id="insertRecord" parameterType="com.ruoyi.education.enrollment.domain.EduCourseRecord" useGeneratedKeys="true" keyProperty="recordId">
+        insert into edu_course_record (
+            student_id,
+            <if test="courseId != null">course_id, </if>
+            course_code,
+            <if test="courseTitle != null and courseTitle != ''">course_title, </if>
+            <if test="termId != null">term_id, </if>
+            <if test="grade != null and grade != ''">grade, </if>
+            <if test="score != null">score, </if>
+            <if test="units != null">units, </if>
+            <if test="category != null and category != ''">category, </if>
+            <if test="passed != null and passed != ''">passed, </if>
+            <if test="recordStatus != null and recordStatus != ''">record_status, </if>
+            <if test="source != null and source != ''">source, </if>
+            <if test="createBy != null and createBy != ''">create_by, </if>
+            create_time
+        ) values (
+            #{studentId},
+            <if test="courseId != null">#{courseId}, </if>
+            #{courseCode},
+            <if test="courseTitle != null and courseTitle != ''">#{courseTitle}, </if>
+            <if test="termId != null">#{termId}, </if>
+            <if test="grade != null and grade != ''">#{grade}, </if>
+            <if test="score != null">#{score}, </if>
+            <if test="units != null">#{units}, </if>
+            <if test="category != null and category != ''">#{category}, </if>
+            <if test="passed != null and passed != ''">#{passed}, </if>
+            <if test="recordStatus != null and recordStatus != ''">#{recordStatus}, </if>
+            <if test="source != null and source != ''">#{source}, </if>
+            <if test="createBy != null and createBy != ''">#{createBy}, </if>
+            sysdate()
+        )
+    </insert>
+
+    <update id="updateRecord" parameterType="com.ruoyi.education.enrollment.domain.EduCourseRecord">
+        update edu_course_record
+        <set>
+            <if test="courseId != null">course_id = #{courseId}, </if>
+            <if test="courseCode != null and courseCode != ''">course_code = #{courseCode}, </if>
+            <if test="courseTitle != null">course_title = #{courseTitle}, </if>
+            <if test="termId != null">term_id = #{termId}, </if>
+            <if test="grade != null">grade = #{grade}, </if>
+            <if test="score != null">score = #{score}, </if>
+            <if test="units != null">units = #{units}, </if>
+            <if test="category != null">category = #{category}, </if>
+            <if test="passed != null and passed != ''">passed = #{passed}, </if>
+            <if test="recordStatus != null and recordStatus != ''">record_status = #{recordStatus}, </if>
+            <if test="source != null and source != ''">source = #{source}, </if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy}, </if>
+            update_time = sysdate()
+        </set>
+        where record_id = #{recordId}
+    </update>
+
+    <update id="deleteRecordByIds" parameterType="Long">
+        update edu_course_record set del_flag = '2' where record_id in
+        <foreach item="recordId" collection="array" open="(" separator="," close=")">
+            #{recordId}
+        </foreach>
+    </update>
+
+</mapper>

@@ -1,0 +1,8 @@
+# 部署目录下的本地文件（根目录 .gitignore 已包含 deploy/.env，这里再兜一层）
+.env
+
+# 备份演练产物（mysqldump 输出），禁止入库
+backups/
+
+# 保留模板文件
+!.env.example

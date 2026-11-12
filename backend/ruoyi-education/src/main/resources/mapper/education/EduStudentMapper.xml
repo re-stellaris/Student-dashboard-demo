@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.education.enrollment.mapper.EduStudentMapper">
+
+    <resultMap type="com.ruoyi.education.enrollment.domain.EduStudent" id="EduStudentResult">
+        <result property="studentId"    column="student_id"    />
+        <result property="sysUserId"    column="sys_user_id"   />
+        <result property="studentNo"    column="student_no"    />
+        <result property="name"         column="name"          />
+        <result property="majorId"      column="major_id"      />
+        <result property="entryYear"    column="entry_year"    />
+        <result property="college"      column="college"       />
+        <result property="email"        column="email"         />
+        <result property="cumGpa"       column="cum_gpa"       />
+        <result property="totalCredits" column="total_credits" />
+        <result property="status"       column="status"        />
+        <result property="majorName"    column="major_name"    />
+        <result property="majorCode"    column="major_code"    />
+        <result property="sysUserName"  column="sys_user_name" />
+        <result property="createBy"     column="create_by"     />
+        <result property="createTime"   column="create_time"   />
+        <result property="updateBy"     column="update_by"     />
+        <result property="updateTime"   column="update_time"   />
+        <result property="remark"       column="remark"        />
+    </resultMap>
+
+    <sql id="selectStudentVo">
+        select s.student_id, s.sys_user_id, s.student_no, s.name, s.major_id, s.entry_year, s.college, s.email,
+               s.cum_gpa, s.total_credits, s.status, s.create_by, s.create_time, s.update_by, s.update_time, s.remark,
+               m.major_name_zh as major_name, m.major_code as major_code, u.user_name as sys_user_name
+        from edu_student s
+        left join edu_major m on m.major_id = s.major_id
+        left join sys_user u on u.user_id = s.sys_user_id
+    </sql>
+
+    <select id="selectStudentById" parameterType="Long" resultMap="EduStudentResult">
+        <include refid="selectStudentVo"/>
+        where s.del_flag = '0' and s.student_id = #{studentId}
+    </select>
+
+    <select id="selectStudentBySysUserId" parameterType="Long" resultMap="EduStudentResult">
+        <include refid="selectStudentVo"/>
+        where s.del_flag = '0' and s.sys_user_id = #{sysUserId}
+        limit 1
+    </select>
+
+    <select id="selectStudentByNo" parameterType="String" resultMap="EduStudentResult">
+        <include refid="selectStudentVo"/>
+        where s.del_flag = '0' and s.student_no = #{studentNo}
+        limit 1
+    </select>
+
+    <select id="selectStudentList" parameterType="com.ruoyi.education.enrollment.domain.EduStudent" resultMap="EduStudentResult">
+        <include refid="selectStudentVo"/>
+        <where>
+            s.del_flag = '0'
+            <if test="studentNo != null and studentNo != ''">
+                and s.student_no like concat('%', #{studentNo}, '%')
+            </if>
+            <if test="name != null and name != ''">
+                and s.name like concat('%', #{name}, '%')
+            </if>
+            <if test="majorId != null">
+                and s.major_id = #{majorId}
+            </if>
+            <if test="entryYear != null">
+                and s.entry_year = #{entryYear}
+            </if>
+            <if test="college != null and college != ''">
+                and s.college = #{college}
+            </if>
+            <if test="status != null and status != ''">
+                and s.status = #{status}
+            </if>
+        </where>
+        order by s.student_no asc
+    </select>
+
+    <!--
+        解析学生适用培养方案：优先命中 effective_from / effective_to 区间，
+        否则回退到与入学年份最接近的版本；无任何版本时返回空（调用方按 0 处理）。
+    -->
+    <select id="selectApplicableCurriculum" parameterType="Long" resultType="com.ruoyi.education.enrollment.dto.CurriculumCreditRow">
+        select cu.curriculum_id as curriculumId,
+               cu.version_label  as versionLabel,
+               cu.total_credits  as totalCredits,
+               cu.major_credits  as majorCredits
+        from edu_student s
+        inner join edu_curriculum cu on cu.major_id = s.major_id
+        where s.del_flag = '0'
+          and s.student_id = #{studentId}
+          and cu.status = '0'
+          and cu.del_flag = '0'
+        order by
+            case when (cu.effective_from is null or cu.effective_from &lt;= coalesce(s.entry_year, cu.version_year))
+                      and (cu.effective_to is null or s.entry_year is null or cu.effective_to &gt;= s.entry_year)
+                 then 0 else 1 end asc,
+            abs(cu.version_year - coalesce(s.entry_year, cu.version_year)) asc,
+            cu.version_year desc
+        limit 1
+    </select>
+
+    <select id="selectCurriculumRequirementSummary" parameterType="Long" resultType="com.ruoyi.education.enrollment.dto.CreditCategoryRow">
+        select ci.requirement_type as category,
+               sum(coalesce(ci.min_units, 0)) as units
+        from edu_curriculum_item ci
+        where ci.curriculum_id = #{curriculumId}
+          <!-- 选修池（ELECTIVE）的每一行只是候选课程，min_units 是单课学分而不是要求学分，
+               累加会得出"要求 166 学分"这种误导性数字，因此不计入要求汇总。
+               选修池的最低学分口径待培养方案数据补齐后再单独建模。 -->
+          and ci.requirement_type != 'ELECTIVE'
+        group by ci.requirement_type
+        order by ci.requirement_type asc
+    </select>
+
+    <select id="selectPlanStatusSummary" parameterType="Long" resultType="com.ruoyi.education.enrollment.dto.PlanStatusCountRow">
+        select p.status as status,
+               count(1) as cnt
+        from edu_study_plan p
+        where p.student_id = #{studentId}
+          and p.del_flag = '0'
+        group by p.status
+    </select>
+
+    <insert id="insertStudent" parameterType="com.ruoyi.education.enrollment.domain.EduStudent" useGeneratedKeys="true" keyProperty="studentId">
+        insert into edu_student (
+            sys_user_id,
+            student_no,
+            <if test="name != null and name != ''">name, </if>
+            <if test="majorId != null">major_id, </if>
+            <if test="entryYear != null">entry_year, </if>
+            <if test="college != null and college != ''">college, </if>
+            <if test="email != null and email != ''">email, </if>
+            <if test="cumGpa != null">cum_gpa, </if>
+            <if test="totalCredits != null">total_credits, </if>
+            <if test="status != null and status != ''">status, </if>
+            <if test="remark != null">remark, </if>
+            <if test="createBy != null and createBy != ''">create_by, </if>
+            create_time
+        ) values (
+            #{sysUserId},
+            #{studentNo},
+            <if test="name != null and name != ''">#{name}, </if>
+            <if test="majorId != null">#{majorId}, </if>
+            <if test="entryYear != null">#{entryYear}, </if>
+            <if test="college != null and college != ''">#{college}, </if>
+            <if test="email != null and email != ''">#{email}, </if>
+            <if test="cumGpa != null">#{cumGpa}, </if>
+            <if test="totalCredits != null">#{totalCredits}, </if>
+            <if test="status != null and status != ''">#{status}, </if>
+            <if test="remark != null">#{remark}, </if>
+            <if test="createBy != null and createBy != ''">#{createBy}, </if>
+            sysdate()
+        )
+    </insert>
+
+    <update id="updateStudent" parameterType="com.ruoyi.education.enrollment.domain.EduStudent">
+        update edu_student
+        <set>
+            <if test="sysUserId != null">sys_user_id = #{sysUserId}, </if>
+            <if test="studentNo != null and studentNo != ''">student_no = #{studentNo}, </if>
+            <if test="name != null">name = #{name}, </if>
+            <if test="majorId != null">major_id = #{majorId}, </if>
+            <if test="entryYear != null">entry_year = #{entryYear}, </if>
+            <if test="college != null">college = #{college}, </if>
+            <if test="email != null">email = #{email}, </if>
+            <if test="cumGpa != null">cum_gpa = #{cumGpa}, </if>
+            <if test="totalCredits != null">total_credits = #{totalCredits}, </if>
+            <if test="status != null and status != ''">status = #{status}, </if>
+            <if test="remark != null">remark = #{remark}, </if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy}, </if>
+            update_time = sysdate()
+        </set>
+        where student_id = #{studentId}
+    </update>
+
+</mapper>

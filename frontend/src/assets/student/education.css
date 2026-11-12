@@ -1,0 +1,299 @@
+/* =====================================================================
+   教育平台（管理/教师侧）· 旧版设计主题
+   ---------------------------------------------------------------------
+   目的：让 /education/** 这些页面脱离若依侧边栏后，视觉与原版
+   （legacy/students-interface/*.html）保持一致。
+
+   构成：
+     1. .sp-root 设计令牌 + 基础排版（与 dashboard.css 完全一致的值）
+     2. .topnav 顶部导航（原版样式逐条复制）
+     3. .lg-* 外壳布局
+     4. Element Plus 主题变量覆盖（表格/卡片/按钮/输入框/分页/弹窗）
+   注意：所有规则都以 .sp-root 为前缀，不会泄漏到若依自带的页面。
+   ===================================================================== */
+
+/* ---------- 1. 设计令牌（原版 dashboard.css 逐值复制）---------- */
+.sp-root {
+  --purple: #0070e0;
+  --bg: #f5f4f9;
+  --surface: #fff;
+  --border: #e2e5ed;
+  --text: #1a1d2e;
+  --text2: #5a6076;
+  --text3: #9198b0;
+  --radius: 12px;
+  --shadow: 0 2px 12px rgba(0, 0, 0, .07);
+  --b1: #eff3ff;
+  --b2: #bdd7e7;
+  --b3: #6baed6;
+  --b4: #2171b5;
+  --m1: #fee2e2;
+  --m1t: #991b1b;
+  --mt1-bg: #eff3ff;
+  --mt1-fg: #1e3a8a;
+  --mt2-bg: #bdd7e7;
+  --mt2-fg: #1e40af;
+  --mt3-bg: #6baed6;
+  --mt3-fg: #0c4a6e;
+  --mt4-bg: #2171b5;
+  --mt4-fg: #ffffff;
+  --accent: #2171b5;
+}
+
+.sp-root,
+.sp-root *,
+.sp-root *::before,
+.sp-root *::after {
+  box-sizing: border-box;
+}
+
+.sp-root {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ---------- 2. 顶部导航（原版 .topnav）---------- */
+.sp-root .topnav {
+  background: var(--purple);
+  display: flex;
+  align-items: center;
+  height: 52px;
+  padding: 0 20px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  gap: 2px;
+}
+
+.sp-root .nav-logo {
+  color: #fff;
+  font-weight: 800;
+  font-size: 14px;
+  margin-right: 16px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.sp-root .nav-link {
+  color: rgba(255, 255, 255, .7);
+  font-size: 13px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+  transition: background .15s, color .15s;
+}
+
+.sp-root .nav-link:hover {
+  background: rgba(255, 255, 255, .1);
+  color: #fff;
+}
+
+.sp-root .nav-link.is-active {
+  background: rgba(255, 255, 255, .18);
+  color: #fff;
+  font-weight: 700;
+}
+
+.sp-root .nav-sep {
+  color: rgba(255, 255, 255, .3);
+}
+
+.sp-root .nav-spacer {
+  flex: 1;
+}
+
+.sp-root .user-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  font-size: 12px;
+  background: rgba(255, 255, 255, .12);
+  padding: 5px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.sp-root .user-pill .ub {
+  cursor: pointer;
+  background: rgba(255, 255, 255, .2);
+  border: none;
+  color: #fff;
+  border-radius: 20px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.sp-root .user-pill .ub:hover {
+  background: rgba(255, 255, 255, .3);
+}
+
+/* ---------- 3. 外壳布局 ---------- */
+.sp-root .lg-main {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.sp-root .lg-main .app-container {
+  padding: 0;
+}
+
+/* 页面标题区：沿用原版卡片标题的排版 */
+.sp-root .lg-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 4px 0 16px;
+  flex-wrap: wrap;
+}
+
+.sp-root .lg-head h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -.01em;
+}
+
+.sp-root .lg-head p {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  color: var(--text2);
+}
+
+/* 标题区右侧的操作按钮组（与标题基线对齐） */
+.sp-root .lg-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sp-root .lg-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+
+/* ---------- 4. Element Plus 主题化（原版配色与圆角）---------- */
+.sp-root {
+  --el-color-primary: #0070e0;
+  --el-color-primary-light-3: #4a95e8;
+  --el-color-primary-light-5: #7fb3ee;
+  --el-color-primary-light-7: #b3d2f5;
+  --el-color-primary-light-8: #cce0f8;
+  --el-color-primary-light-9: #e6f0fb;
+  --el-color-primary-dark-2: #0059b3;
+  --el-color-success: #157347;
+  --el-color-warning: #b45309;
+  --el-color-danger: #b91c1c;
+  --el-text-color-primary: #1a1d2e;
+  --el-text-color-regular: #5a6076;
+  --el-text-color-secondary: #9198b0;
+  --el-border-color: #e2e5ed;
+  --el-border-color-light: #eef1f6;
+  --el-border-color-lighter: #f2f4f8;
+  --el-fill-color-blank: #fff;
+  --el-fill-color-light: #f5f7fb;
+  --el-border-radius-base: 10px;
+  --el-border-radius-small: 8px;
+  --el-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.sp-root .el-card {
+  border-radius: var(--radius);
+  border-color: var(--border);
+  box-shadow: var(--shadow);
+}
+
+.sp-root .el-card__header {
+  border-bottom-color: var(--border);
+  font-weight: 800;
+  color: var(--text);
+}
+
+.sp-root .el-button {
+  border-radius: 9px;
+  font-weight: 600;
+}
+
+.sp-root .el-button--primary {
+  box-shadow: 0 2px 8px rgba(0, 112, 224, .24);
+}
+
+.sp-root .el-input__wrapper,
+.sp-root .el-textarea__inner,
+.sp-root .el-select__wrapper {
+  border-radius: 9px;
+  box-shadow: 0 0 0 1px var(--border) inset;
+}
+
+.sp-root .el-input__wrapper.is-focus,
+.sp-root .el-select__wrapper.is-focused {
+  box-shadow: 0 0 0 1px var(--el-color-primary) inset;
+}
+
+.sp-root .el-table {
+  --el-table-border-color: var(--border);
+  --el-table-row-hover-bg-color: #f5f8fd;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.sp-root .el-table th.el-table__cell {
+  background: #f5f7fb;
+  color: var(--text2);
+  font-weight: 700;
+}
+
+.sp-root .el-table .cell {
+  line-height: 1.5;
+}
+
+.sp-root .el-tag {
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.sp-root .el-pagination {
+  --el-pagination-border-radius: 8px;
+  margin-top: 12px;
+  justify-content: flex-end;
+}
+
+.sp-root .el-dialog,
+.sp-root .el-drawer {
+  border-radius: 14px;
+}
+
+.sp-root .el-dialog__header {
+  border-bottom: 1px solid var(--border);
+  margin-right: 0;
+  padding-bottom: 12px;
+}
+
+.sp-root .el-form-item__label {
+  color: var(--text2);
+  font-weight: 600;
+}
+
+.sp-root .el-descriptions__label {
+  color: var(--text2);
+  font-weight: 700;
+}

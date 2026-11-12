@@ -1,0 +1,136 @@
+# =====================================================================
+# Docker / 容器化部署 profile
+# ---------------------------------------------------------------------
+# 【激活方式】注意顺序：docker 必须写在 druid 之后，后加载的 profile 优先级更高，
+# 否则本文件无法覆盖 application-druid.yml 里硬编码的 localhost/root/password：
+#
+#   SPRING_PROFILES_ACTIVE=druid,docker          # 推荐（docker compose 已默认注入）
+#   java -jar ruoyi-admin.jar --spring.profiles.active=druid,docker
+#
+# 【设计原则】本文件只写「覆盖项」，不复制 application.yml / application-druid.yml
+# 的其余内容；未出现的配置继续沿用原文件。
+#
+# 【安全原则】所有值都从环境变量读取，禁止把真实口令 / 密钥写进本文件。
+# 变量清单与本地默认值见 deploy/.env.example。
+# =====================================================================
+
+spring:
+  # -------------------------------------------------------------------
+  # 数据源：覆盖 application-druid.yml 里硬编码的
+  #   url: jdbc:mysql://localhost:3306/ry-vue...
+  #   username: root
+  #   password: password
+  # 宿主名默认用 compose 服务名 mysql（容器内不要用 localhost）。
+  # -------------------------------------------------------------------
+  datasource:
+    druid:
+      master:
+        # useSSL=false：docker 内部网络不做 TLS；同时必须 allowPublicKeyRetrieval=true，
+        # 否则 MySQL 8 的 caching_sha2_password 在非 TLS 连接上会报
+        # "Public Key Retrieval is not allowed"。
+        # 若外层需要 TLS，把 DB_USE_SSL 设为 true 并挂载证书。
+        url: "jdbc:mysql://${DB_HOST:mysql}:${DB_PORT:3306}/${DB_NAME:education_db}?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=${DB_USE_SSL:false}&allowPublicKeyRetrieval=true&serverTimezone=GMT%2B8"
+        username: ${DB_USER:ruoyi}
+        password: ${DB_PASSWORD:}
+      # -----------------------------------------------------------------
+      # 安全基线（docs/architecture/adr/ADR-0006-security-baseline.md）：
+      # 容器化部署默认关闭 Druid 监控台，避免它经 nginx 的 /prod-api/druid/ 暴露。
+      # 如需排查性能问题，临时设 DRUID_STAT_VIEW_ENABLED=true 并配置强口令 + allow 白名单。
+      # -----------------------------------------------------------------
+      statViewServlet:
+        enabled: ${DRUID_STAT_VIEW_ENABLED:false}
+
+  # -------------------------------------------------------------------
+  # Redis：覆盖 application.yml 里的 host: localhost / port: 6379 / password: (空)
+  # -------------------------------------------------------------------
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      database: ${REDIS_DB:0}
+      password: ${REDIS_PASSWORD:}
+      timeout: ${REDIS_TIMEOUT:10s}
+
+# ---------------------------------------------------------------------
+# 容器内固定监听 8080（compose 只把 frontend 的 80 端口发布到宿主，
+# 后端通过 ruoyi-net 内部网络被 nginx 以 http://backend:8080 访问）。
+# ---------------------------------------------------------------------
+server:
+  port: 8080
+  # 采信 nginx 传来的 X-Forwarded-*，让 request.getRemoteAddr() / 生成的重定向 URL
+  # 反映真实客户端与真实协议（HTTP/HTTPS），而不是 nginx 容器 IP。
+  forward-headers-strategy: native
+
+# ---------------------------------------------------------------------
+# 上传文件落盘目录：必须是容器内可写路径，且由 compose 的 backend_uploads
+# 卷挂载（/app/data）。镜像里已把 /app/data 的属主设为非 root 的 ruoyi 用户。
+# 注意：Windows 风格的 D:/ruoyi/uploadPath（application.yml 默认值）在容器里无效。
+# ---------------------------------------------------------------------
+ruoyi:
+  profile: ${RUOYI_PROFILE:/app/data/uploadPath}
+
+# ---------------------------------------------------------------------
+# JWT：令牌密钥必须由环境变量注入（容器里没有安全的默认值）。
+# 未设置 TOKEN_SECRET 时应用会在启动阶段直接报
+# "Could not resolve placeholder 'TOKEN_SECRET'" 而退出——这是刻意的失败即明显。
+# 建议：>= 32 位随机串，例如 `openssl rand -base64 48`。
+# expireTime 单位是分钟（若依 TokenService 语义），默认 30。
+# ---------------------------------------------------------------------
+token:
+  secret: ${TOKEN_SECRET}
+  expireTime: ${TOKEN_EXPIRE_TIME:30}
+
+# ---------------------------------------------------------------------
+# 接口文档：容器化部署默认关闭，避免 /prod-api/v3/api-docs 与
+# /prod-api/swagger-ui.html 对外暴露内部接口结构。
+# 需要联调时临时设 SPRINGDOC_ENABLED=true。
+# ---------------------------------------------------------------------
+springdoc:
+  api-docs:
+    enabled: ${SPRINGDOC_ENABLED:false}
+  swagger-ui:
+    enabled: ${SPRINGDOC_ENABLED:false}
+
+# =====================================================================
+# 加固说明（刻意保持为注释，避免改变现有行为；上线前按需逐条打开）
+# ---------------------------------------------------------------------
+# 1) 验证码：application.yml 里 ruoyi.captchaType=math。
+#    登录页是否要求验证码由数据库表 sys_config 的
+#    `sys.account.captchaEnabled` 控制（true/false），不在 yml 里。
+#    生产建议：captchaEnabled=true，并把 captchaType 改成 char（字符验证码更难被 OCR 破解）。
+#    ruoyi:
+#      captchaType: char
+#
+# 2) 登录爆破防护：沿用 application.yml 的 user.password 配置，
+#    默认 maxRetryCount=5 / lockTime=10（分钟）。生产建议收紧：
+#    user:
+#      password:
+#        maxRetryCount: 5
+#        lockTime: 30
+#
+# 3) Druid 监控台：application-druid.yml 默认开启
+#    statViewServlet.enabled=true，账号 ruoyi/123456，且 allow 为空（= 允许所有来源）。
+#    容器化后该控制台会经 nginx 的 /prod-api/druid/ 暴露出去。
+#    → 本 profile 已默认关闭（stat-view-servlet.enabled: ${DRUID_STAT_VIEW_ENABLED:false}）；
+#      如需临时打开：DRUID_STAT_VIEW_ENABLED=true，并同时设置强口令与 allow 白名单：
+#    spring:
+#      datasource:
+#        druid:
+#          statViewServlet:
+#            login-username: <强口令账号>
+#            login-password: <强口令>
+#            allow: 172.16.0.0/12
+#
+# 4) 接口文档：springdoc.swagger-ui.enabled=true 会把 /swagger-ui.html 与
+#    /v3/api-docs 暴露在 /prod-api 下。
+#    → 本 profile 已默认关闭（springdoc.*.enabled: ${SPRINGDOC_ENABLED:false}）。
+#
+# 5) SQL 日志：application.yml 里 logging.level.com.ruoyi=debug 在生产会刷屏且含敏感参数，
+#    建议改为 info：
+#    logging:
+#      level:
+#        com.ruoyi: info
+#
+# 6) spring-boot-devtools 在 application.yml 中是 enabled=true，但它只在开发期生效，
+#    且未被 spring-boot-maven-plugin repackage 打进 ruoyi-admin.jar，容器内无影响。
+# =====================================================================

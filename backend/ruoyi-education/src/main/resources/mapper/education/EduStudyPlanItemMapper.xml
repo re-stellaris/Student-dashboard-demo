@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.education.planning.mapper.EduStudyPlanItemMapper">
+
+    <resultMap type="com.ruoyi.education.planning.domain.EduStudyPlanItem" id="EduStudyPlanItemResult">
+        <result property="itemId"            column="item_id"            />
+        <result property="planId"            column="plan_id"            />
+        <result property="courseId"          column="course_id"          />
+        <result property="reason"            column="reason"             />
+        <result property="validationStatus"  column="validation_status"  />
+        <result property="validationMessage" column="validation_message" />
+        <result property="sortOrder"         column="sort_order"         />
+        <result property="courseCode"        column="course_code"        />
+        <result property="courseTitle"       column="course_title"       />
+        <result property="units"             column="units"              />
+    </resultMap>
+
+    <sql id="selectItemVo">
+        select i.item_id, i.plan_id, i.course_id, i.reason, i.validation_status, i.validation_message, i.sort_order,
+               c.code as course_code,
+               ifnull(nullif(c.title_zh, ''), c.title_en) as course_title,
+               c.credits as units
+        from edu_study_plan_item i
+        left join edu_course c on c.course_id = i.course_id
+    </sql>
+
+    <select id="selectItemsByPlanId" parameterType="java.lang.Long" resultMap="EduStudyPlanItemResult">
+        <include refid="selectItemVo"/>
+        where i.plan_id = #{planId}
+        order by i.sort_order asc, i.item_id asc
+    </select>
+
+    <insert id="insertItemBatch" parameterType="java.util.List">
+        insert into edu_study_plan_item (plan_id, course_id, reason, validation_status, validation_message, sort_order)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.planId}, #{item.courseId}, #{item.reason}, #{item.validationStatus},
+             #{item.validationMessage}, #{item.sortOrder})
+        </foreach>
+    </insert>
+
+    <delete id="deleteItemsByPlanId" parameterType="java.lang.Long">
+        delete from edu_study_plan_item where plan_id = #{planId}
+    </delete>
+
+    <select id="countItemsByPlanId" parameterType="java.lang.Long" resultType="java.lang.Integer">
+        select count(1) from edu_study_plan_item where plan_id = #{planId}
+    </select>
+
+</mapper>

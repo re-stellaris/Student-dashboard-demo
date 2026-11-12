@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.education.advisor.mapper.EduAdvisorMapper">
+
+    <!--
+        导师看板只读查询。
+        说明：当前库没有 advisor-student 关系表，所有查询都不带“导师名下”过滤，
+        即 TEACHER / ADMIN 可看全部学生。限制与后续落地方案见 EduAdvisorServiceImpl 类注释。
+    -->
+
+    <!-- 学生读模型（专业名中文优先，缺失时回退英文/编码） -->
+    <select id="selectAdvisorStudents" parameterType="com.ruoyi.education.advisor.dto.AdvisorStudentQuery"
+            resultType="com.ruoyi.education.advisor.dto.AdvisorStudentRow">
+        select s.student_id as studentId,
+               s.student_no as studentNo,
+               s.name as name,
+               s.major_id as majorId,
+               s.entry_year as entryYear,
+               s.college as college,
+               s.cum_gpa as cumGpa,
+               s.total_credits as totalCredits,
+               coalesce(nullif(m.major_name_zh, ''), m.major_name_en, m.major_code, '') as majorName,
+               m.major_code as majorCode
+        from edu_student s
+        left join edu_major m on m.major_id = s.major_id
+        where s.del_flag = '0'
+        <if test="entryYear != null">
+            and s.entry_year = #{entryYear}
+        </if>
+        <if test="majorId != null">
+            and s.major_id = #{majorId}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            and (s.name like concat('%', #{keyword}, '%')
+                 or s.student_no like concat('%', #{keyword}, '%'))
+        </if>
+        order by s.student_no asc
+    </select>
+
+    <select id="selectAdvisorStudentById" resultType="com.ruoyi.education.advisor.dto.AdvisorStudentRow">
+        select s.student_id as studentId,
+               s.student_no as studentNo,
+               s.name as name,
+               s.major_id as majorId,
+               s.entry_year as entryYear,
+               s.college as college,
+               s.cum_gpa as cumGpa,
+               s.total_credits as totalCredits,
+               coalesce(nullif(m.major_name_zh, ''), m.major_name_en, m.major_code, '') as majorName,
+               m.major_code as majorCode
+        from edu_student s
+        left join edu_major m on m.major_id = s.major_id
+        where s.del_flag = '0'
+          and s.student_id = #{studentId}
+    </select>
+
+    <!-- 成绩行：课程名/学分快照为空时用课程目录回填；term 为空的历史数据仍可读取 -->
+    <select id="selectAdvisorGradeRows" resultType="com.ruoyi.education.advisor.dto.AdvisorGradeRow">
+        select r.student_id as studentId,
+               r.course_id as courseId,
+               r.course_code as courseCode,
+               coalesce(nullif(r.course_title, ''), c.title_zh, c.title_en, '') as courseTitle,
+               r.grade as grade,
+               r.score as score,
+               coalesce(nullif(r.units, 0), c.credits, 0) as units,
+               r.category as category,
+               r.passed as passed,
+               r.record_status as recordStatus,
+               t.term_code as termCode,
+               t.term_name as termName,
+               t.academic_year as academicYear,
+               t.term_index as termIndex
+        from edu_course_record r
+        left join edu_course c on c.course_id = r.course_id
+        left join edu_term t on t.term_id = r.term_id
+        where r.del_flag = '0'
+        <if test="studentId != null">
+            and r.student_id = #{studentId}
+        </if>
+        order by t.term_code asc, r.record_id asc
+    </select>
+
+    <select id="selectAdvisorTerms" resultType="com.ruoyi.education.advisor.dto.AdvisorTermRow">
+        select term_id as termId,
+               term_code as termCode,
+               term_name as termName,
+               academic_year as academicYear,
+               term_index as termIndex,
+               is_current as isCurrent
+        from edu_term
+        order by term_code asc
+    </select>
+
+    <select id="selectCategoryCredits" resultType="com.ruoyi.education.advisor.dto.AdvisorCategoryCreditRow">
+        select r.category as category,
+               sum(coalesce(nullif(r.units, 0), c.credits, 0)) as credits,
+               count(1) as courseCount
+        from edu_course_record r
+        left join edu_course c on c.course_id = r.course_id
+        where r.student_id = #{studentId}
+          and r.passed = '1'
+          and r.record_status = 'COMPLETED'
+          and r.del_flag = '0'
+        group by r.category
+        order by credits desc
+    </select>
+
+</mapper>

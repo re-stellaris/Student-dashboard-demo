@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.education.course.mapper.EduCoursePrereqMapper">
+
+    <resultMap type="com.ruoyi.education.course.domain.EduCoursePrereq" id="EduCoursePrereqResult">
+        <result property="id"             column="id"               />
+        <result property="courseId"       column="course_id"        />
+        <result property="prereqCourseId" column="prereq_course_id" />
+        <result property="groupNo"        column="group_no"         />
+        <result property="rawText"        column="raw_text"         />
+        <result property="courseCode"     column="course_code"      />
+        <result property="prereqCode"     column="prereq_code"      />
+        <result property="prereqTitle"    column="prereq_title"     />
+        <result property="createBy"       column="create_by"        />
+        <result property="createTime"     column="create_time"      />
+    </resultMap>
+
+    <sql id="selectPrereqVo">
+        select p.id, p.course_id, p.prereq_course_id, p.group_no, p.raw_text, p.create_by, p.create_time,
+               c.code as course_code,
+               pc.code as prereq_code,
+               coalesce(nullif(pc.title_zh, ''), pc.title_en) as prereq_title
+        from edu_course_prereq p
+        left join edu_course c on c.course_id = p.course_id
+        left join edu_course pc on pc.course_id = p.prereq_course_id
+    </sql>
+
+    <select id="selectPrereqByCourseId" parameterType="java.lang.Long" resultMap="EduCoursePrereqResult">
+        <include refid="selectPrereqVo"/>
+        where p.course_id = #{courseId}
+        order by p.group_no, pc.code
+    </select>
+
+    <select id="selectAllPrereq" resultMap="EduCoursePrereqResult">
+        <include refid="selectPrereqVo"/>
+        order by p.course_id, p.group_no, pc.code
+    </select>
+
+    <insert id="insertPrereqBatch">
+        insert into edu_course_prereq (course_id, prereq_course_id, group_no, raw_text, create_by, create_time)
+        values
+        <foreach item="item" collection="prereqs" separator=",">
+            (#{item.courseId}, #{item.prereqCourseId}, #{item.groupNo}, #{item.rawText}, #{item.createBy}, sysdate())
+        </foreach>
+    </insert>
+
+    <delete id="deletePrereqByCourseId" parameterType="java.lang.Long">
+        delete from edu_course_prereq where course_id = #{courseId}
+    </delete>
+
+    <select id="countSelfReference" resultType="java.lang.Integer">
+        select count(1) from edu_course_prereq where course_id = prereq_course_id
+    </select>
+
+</mapper>

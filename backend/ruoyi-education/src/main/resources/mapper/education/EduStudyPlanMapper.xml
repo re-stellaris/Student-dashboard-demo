@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.education.planning.mapper.EduStudyPlanMapper">
+
+    <resultMap type="com.ruoyi.education.planning.domain.EduStudyPlan" id="EduStudyPlanResult">
+        <result property="planId"          column="plan_id"          />
+        <result property="studentId"       column="student_id"       />
+        <result property="termId"          column="term_id"          />
+        <result property="title"           column="title"            />
+        <result property="status"          column="status"           />
+        <result property="totalUnits"      column="total_units"      />
+        <result property="unitLimit"       column="unit_limit"       />
+        <result property="validationState" column="validation_state" />
+        <result property="validationNote"  column="validation_note"  />
+        <result property="delFlag"         column="del_flag"         />
+        <result property="createBy"        column="create_by"        />
+        <result property="createTime"      column="create_time"      />
+        <result property="updateBy"        column="update_by"        />
+        <result property="updateTime"      column="update_time"      />
+        <result property="termCode"        column="term_code"        />
+        <result property="termName"        column="term_name"        />
+        <result property="studentNo"       column="student_no"       />
+        <result property="studentName"     column="student_name"     />
+    </resultMap>
+
+    <sql id="selectPlanVo">
+        select p.plan_id, p.student_id, p.term_id, p.title, p.status, p.total_units, p.unit_limit,
+               p.validation_state, p.validation_note, p.del_flag, p.create_by, p.create_time,
+               p.update_by, p.update_time,
+               t.term_code, t.term_name, s.student_no, s.name as student_name
+        from edu_study_plan p
+        left join edu_term t on t.term_id = p.term_id
+        left join edu_student s on s.student_id = p.student_id
+    </sql>
+
+    <select id="selectPlanList" parameterType="com.ruoyi.education.planning.domain.EduStudyPlan" resultMap="EduStudyPlanResult">
+        <include refid="selectPlanVo"/>
+        <where>
+            p.del_flag = '0'
+            <if test="studentId != null">
+                AND p.student_id = #{studentId}
+            </if>
+            <if test="termId != null">
+                AND p.term_id = #{termId}
+            </if>
+            <if test="status != null and status != ''">
+                AND p.status = #{status}
+            </if>
+            <if test="title != null and title != ''">
+                AND p.title like concat('%', #{title}, '%')
+            </if>
+        </where>
+        order by p.term_id desc, p.plan_id desc
+    </select>
+
+    <select id="selectPlanById" parameterType="java.lang.Long" resultMap="EduStudyPlanResult">
+        <include refid="selectPlanVo"/>
+        where p.plan_id = #{planId}
+    </select>
+
+    <select id="selectPlanByStudentAndTerm" resultMap="EduStudyPlanResult">
+        <include refid="selectPlanVo"/>
+        where p.student_id = #{studentId}
+          and p.term_id = #{termId}
+          and p.del_flag = '0'
+        limit 1
+    </select>
+
+    <insert id="insertPlan" parameterType="com.ruoyi.education.planning.domain.EduStudyPlan"
+            useGeneratedKeys="true" keyProperty="planId">
+        insert into edu_study_plan (
+            student_id,
+            term_id,
+            <if test="title != null and title != ''">title,</if>
+            <if test="status != null and status != ''">status,</if>
+            <if test="totalUnits != null">total_units,</if>
+            <if test="unitLimit != null">unit_limit,</if>
+            <if test="validationState != null">validation_state,</if>
+            <if test="validationNote != null">validation_note,</if>
+            <if test="delFlag != null and delFlag != ''">del_flag,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        ) values (
+            #{studentId},
+            #{termId},
+            <if test="title != null and title != ''">#{title},</if>
+            <if test="status != null and status != ''">#{status},</if>
+            <if test="totalUnits != null">#{totalUnits},</if>
+            <if test="unitLimit != null">#{unitLimit},</if>
+            <if test="validationState != null">#{validationState},</if>
+            <if test="validationNote != null">#{validationNote},</if>
+            <if test="delFlag != null and delFlag != ''">#{delFlag},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        )
+    </insert>
+
+    <update id="updatePlan" parameterType="com.ruoyi.education.planning.domain.EduStudyPlan">
+        update edu_study_plan
+        <set>
+            <if test="title != null and title != ''">title = #{title},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="totalUnits != null">total_units = #{totalUnits},</if>
+            <if test="unitLimit != null">unit_limit = #{unitLimit},</if>
+            <if test="validationState != null">validation_state = #{validationState},</if>
+            <if test="validationNote != null">validation_note = #{validationNote},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where plan_id = #{planId}
+    </update>
+
+    <update id="updatePlanStatus" parameterType="com.ruoyi.education.planning.domain.EduStudyPlan">
+        update edu_study_plan
+        <set>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="validationState != null">validation_state = #{validationState},</if>
+            <if test="validationNote != null">validation_note = #{validationNote},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where plan_id = #{planId}
+    </update>
+
+    <delete id="deletePlanByIds" parameterType="java.lang.Long">
+        delete from edu_study_plan where plan_id in
+        <foreach item="planId" collection="array" open="(" separator="," close=")">
+            #{planId}
+        </foreach>
+    </delete>
+
+</mapper>

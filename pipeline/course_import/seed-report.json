@@ -1,0 +1,1040 @@
+{
+  "generator": "pipeline/course_import/build_edu_seed.py",
+  "generator_version": "1.0.0",
+  "seed_timestamp": "2026-11-15 00:00:00",
+  "current_term": "2026-27-1",
+  "id_policy": {
+    "course_id": "100000 + rank after sorting courses by code (0-based)",
+    "major_id / curriculum_id / term_id / student_id / teacher_id / offering_id / enrollment_id / record_id / skill_tag_id": "1000 + rank",
+    "prereq_id / curriculum_item_id / competency_id": "1 + rank (insert order)"
+  },
+  "determinism": "no clock, no randomness; every list is sorted before ids are assigned",
+  "idempotency": "delete-then-insert per table, FOREIGN_KEY_CHECKS disabled per file",
+  "inputs": [
+    {
+      "path": "data/course_catalog/sis_course_outlines_export.xlsx",
+      "size_bytes": 6376468,
+      "sha256": "5e141309ffa6a70ed097587a5ef9fbd7096d7ffb2bfa5aef0189f0e59abc2c58"
+    },
+    {
+      "path": "data/course_catalog/All_Course_Lists.xlsx",
+      "size_bytes": 547062,
+      "sha256": "dcd8fc99b242763f2d2bafe5729a06d3350101ed97497acc39e1a1f807c1d3ad"
+    },
+    {
+      "path": "data/demo/student_demo_data.xlsx",
+      "size_bytes": 24524,
+      "sha256": "992ed3e1f463442128c0924ce23b8636b51c853060ed770a3299739776da0529"
+    },
+    {
+      "path": "data/demo/stu_demo_SME.xlsx",
+      "size_bytes": 23574,
+      "sha256": "eadf5d7cfc59f60bcc47f0d4d76eb59cfe5cbac7bd2845733b9650dd4d817b94"
+    },
+    {
+      "path": "data/graduation_rules/SDS_major_rules_index.json",
+      "size_bytes": 2978,
+      "sha256": "9eee65b511a313951ccede1baed28361d703df7c2406091138ec316169e27000"
+    },
+    {
+      "path": "data/competency/a_to_z_course_competency_relevance.xlsx",
+      "size_bytes": 1098212,
+      "sha256": "9601e9765950bf9cdaa8f10fe2a89b937cb72ca4adced55a2b06c535cc735010"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "backend/sql/edu/V3__edu_seed_course.sql",
+      "migration": "V3",
+      "size_bytes": 3642369,
+      "sha256": "e1fdde306978ed90d22a44fdcffd83978db984001c1b069a4672d53d57242947",
+      "statements": 28,
+      "rows": {
+        "edu_course": 3425,
+        "edu_course_prereq": 2048
+      }
+    },
+    {
+      "path": "backend/sql/edu/V4__edu_seed_curriculum.sql",
+      "migration": "V4",
+      "size_bytes": 91855,
+      "sha256": "d186977c2c8fbaa088a4f30804209299a88145877ea18b99b42e0556d4f7d80b",
+      "statements": 10,
+      "rows": {
+        "edu_major": 6,
+        "edu_curriculum": 7,
+        "edu_curriculum_item": 612
+      }
+    },
+    {
+      "path": "backend/sql/edu/V5__edu_seed_student.sql",
+      "migration": "V5",
+      "size_bytes": 54103,
+      "sha256": "7b0c5b5ef093af613933e0dea11ef1e977514ed728c744a9b463251eabf27bfd",
+      "statements": 15,
+      "rows": {
+        "edu_term": 11,
+        "edu_teacher": 1,
+        "edu_student": 8,
+        "edu_course_offering": 6,
+        "edu_enrollment": 3,
+        "edu_course_record": 288
+      }
+    },
+    {
+      "path": "backend/sql/edu/V6__edu_seed_competency.sql",
+      "migration": "V6",
+      "size_bytes": 749807,
+      "sha256": "61aafee8a9ebea78dd2e750db7800562daaf59b230ac29325817b4b0bf819984",
+      "statements": 14,
+      "rows": {
+        "edu_skill_tag": 67,
+        "edu_course_competency": 3910
+      }
+    }
+  ],
+  "row_counts": {
+    "edu_course": 3425,
+    "edu_course_prereq": 2048,
+    "edu_major": 6,
+    "edu_curriculum": 7,
+    "edu_curriculum_item": 612,
+    "edu_term": 11,
+    "edu_teacher": 1,
+    "edu_student": 8,
+    "edu_course_offering": 6,
+    "edu_enrollment": 3,
+    "edu_course_record": 288,
+    "edu_skill_tag": 67,
+    "edu_course_competency": 3910
+  },
+  "validation": [
+    "unique key edu_course.code holds (3425 rows)",
+    "unique key edu_curriculum(major_id,version_year) holds (7 rows)",
+    "unique key edu_term.term_code holds (11 rows)",
+    "unique key edu_student.student_no holds (8 rows)",
+    "unique key edu_student.sys_user_id holds (8 rows)",
+    "unique key edu_teacher.teacher_no holds (1 rows)",
+    "unique key edu_teacher.sys_user_id holds (1 rows)",
+    "unique key edu_course_offering(course_id,term_id) holds (6 rows)",
+    "unique key edu_enrollment(student_id,offering_id) holds (3 rows)",
+    "unique key edu_course_prereq(course_id,prereq_course_id) holds (2048 rows)",
+    "unique key edu_skill_tag.code holds (67 rows)",
+    "unique key edu_course_competency(course_id,skill_tag_id) holds (3910 rows)",
+    "unique key edu_course_record(student_id,course_code,term_id) holds (288 rows)",
+    "all foreign keys resolve inside the generated files",
+    "no self-referencing prerequisite rows"
+  ],
+  "skipped_course_codes": {
+    "prerequisites_not_in_catalogue": [
+      {
+        "code": "BIO2032",
+        "occurrences": 1
+      },
+      {
+        "code": "CSC4020",
+        "occurrences": 4
+      },
+      {
+        "code": "DDA2020",
+        "occurrences": 4
+      },
+      {
+        "code": "ECON6231",
+        "occurrences": 1
+      },
+      {
+        "code": "EIE2001",
+        "occurrences": 2
+      },
+      {
+        "code": "EIE3001",
+        "occurrences": 2
+      },
+      {
+        "code": "EIE3050",
+        "occurrences": 1
+      },
+      {
+        "code": "EIE3202",
+        "occurrences": 1
+      },
+      {
+        "code": "EIE3510",
+        "occurrences": 1
+      },
+      {
+        "code": "EIE4002",
+        "occurrences": 1
+      },
+      {
+        "code": "EIE4003",
+        "occurrences": 1
+      },
+      {
+        "code": "MATH1002",
+        "occurrences": 1
+      },
+      {
+        "code": "MATH1004",
+        "occurrences": 1
+      },
+      {
+        "code": "MATH2006",
+        "occurrences": 1
+      },
+      {
+        "code": "MATH2040",
+        "occurrences": 1
+      },
+      {
+        "code": "MATH3253",
+        "occurrences": 1
+      },
+      {
+        "code": "MATH6310",
+        "occurrences": 1
+      },
+      {
+        "code": "MATH6330",
+        "occurrences": 1
+      },
+      {
+        "code": "PSY1005",
+        "occurrences": 1
+      },
+      {
+        "code": "STA2003",
+        "occurrences": 32
+      },
+      {
+        "code": "STA2004",
+        "occurrences": 6
+      },
+      {
+        "code": "STAT2001",
+        "occurrences": 1
+      }
+    ],
+    "course_records_not_in_catalogue": [
+      {
+        "code": "MIS23012",
+        "occurrences": 1
+      }
+    ],
+    "competency_scores_not_in_catalogue": [
+      {
+        "code": "DDA5002",
+        "occurrences": 10
+      }
+    ],
+    "curriculum_items_not_in_catalogue": [
+      {
+        "code": "STA3042",
+        "occurrences": 3
+      },
+      {
+        "code": "EIE3280",
+        "occurrences": 2
+      },
+      {
+        "code": "EIE4512",
+        "occurrences": 2
+      }
+    ]
+  },
+  "unmatched_programmes": {
+    "rule_programmes_without_course_list": [],
+    "course_list_programmes_without_rule": [
+      "X及航天科学与地球信息学双主修课程",
+      "X及跨学科数据分析双主修课程",
+      "临床医学",
+      "人工智能",
+      "会计学",
+      "作曲与作曲技术理论",
+      "化学",
+      "国际商务",
+      "国际组织与全球治理",
+      "城市管理",
+      "大数据管理与应用",
+      "市场营销",
+      "应用心理学",
+      "数学与应用数学",
+      "新能源科学与工程",
+      "材料科学与工程",
+      "材料科学与工程及X双主修课程_ X及材料科学与工程学双主修课程",
+      "物理学",
+      "生物信息学",
+      "生物医学工程",
+      "生物科学",
+      "电子与计算机工程",
+      "电子信息工程",
+      "经济学",
+      "翻译",
+      "英语",
+      "金融学",
+      "金融工程",
+      "音乐学",
+      "音乐表演"
+    ]
+  },
+  "courses": {
+    "source_rows": 3429,
+    "with_code": 3429,
+    "duplicate_codes": 4,
+    "duplicate_code_examples": [
+      "FIN(6106) / FIN6106",
+      "FIN(6128) / FIN6128",
+      "FIN(6130) / FIN6130",
+      "FIN(6145) / FIN6145"
+    ],
+    "non_numeric_units": [
+      "0.00 - 10.00"
+    ],
+    "blank_units": 3,
+    "title_en_from_course_lists": 955,
+    "title_en_missing": 2470,
+    "category_counts": {
+      "Chinese": 59,
+      "English": 67,
+      "GenEd": 186,
+      "IT": 1,
+      "Major": 3052,
+      "PE": 60
+    },
+    "outline_status_counts": {
+      "ghost_outline_unavailable": 1606,
+      "no_current_detail": 3,
+      "saved_outline": 1816
+    }
+  },
+  "prerequisites": {
+    "texts_total": 1375,
+    "texts_blank": 0,
+    "no_prerequisite_texts": 358,
+    "texts_without_code": 297,
+    "texts_with_edges": 720,
+    "groups": 1251,
+    "rows_emitted": 2048,
+    "self_references_skipped": 14,
+    "duplicate_edges_skipped": 15,
+    "unresolved_codes": [
+      {
+        "code": "BIO2032",
+        "occurrences": 1
+      },
+      {
+        "code": "CSC4020",
+        "occurrences": 4
+      },
+      {
+        "code": "DDA2020",
+        "occurrences": 4
+      },
+      {
+        "code": "ECON6231",
+        "occurrences": 1
+      },
+      {
+        "code": "EIE2001",
+        "occurrences": 2
+      },
+      {
+        "code": "EIE3001",
+        "occurrences": 2
+      },
+      {
+        "code": "EIE3050",
+        "occurrences": 1
+      },
+      {
+        "code": "EIE3202",
+        "occurrences": 1
+      },
+      {
+        "code": "EIE3510",
+        "occurrences": 1
+      },
+      {
+        "code": "EIE4002",
+        "occurrences": 1
+      },
+      {
+        "code": "EIE4003",
+        "occurrences": 1
+      },
+      {
+        "code": "MATH1002",
+        "occurrences": 1
+      },
+      {
+        "code": "MATH1004",
+        "occurrences": 1
+      },
+      {
+        "code": "MATH2006",
+        "occurrences": 1
+      },
+      {
+        "code": "MATH2040",
+        "occurrences": 1
+      },
+      {
+        "code": "MATH3253",
+        "occurrences": 1
+      },
+      {
+        "code": "MATH6310",
+        "occurrences": 1
+      },
+      {
+        "code": "MATH6330",
+        "occurrences": 1
+      },
+      {
+        "code": "PSY1005",
+        "occurrences": 1
+      },
+      {
+        "code": "STA2003",
+        "occurrences": 32
+      },
+      {
+        "code": "STA2004",
+        "occurrences": 6
+      },
+      {
+        "code": "STAT2001",
+        "occurrences": 1
+      }
+    ],
+    "unparsed_examples": [
+      {
+        "course": "ACT6242",
+        "text": "Have background in basic Accounting and Statistical Analysis knowledge."
+      },
+      {
+        "course": "ACT6243",
+        "text": "Basic knowledge of Python"
+      },
+      {
+        "course": "ACT6283",
+        "text": "Hands-on experience and knowledge on ONE OF below programming languages: R, Python, SAS, Stata. Undergraduate or graduate level course of econometrics and statistics. General understanding of derivati"
+      },
+      {
+        "course": "ACT6284",
+        "text": "Knowledge of basic accounting and financial analysis. Basic skills in Microsoft Excel."
+      },
+      {
+        "course": "ACT6305",
+        "text": "Econometrics Microeconomics Asset Pricing"
+      },
+      {
+        "course": "ACT6311",
+        "text": "Econometrics I Microeconomic Theory I Asset Pricing"
+      },
+      {
+        "course": "ACT6312",
+        "text": "ECON6231 Econometrics I"
+      },
+      {
+        "course": "AIE1101",
+        "text": "This course assumes no prior exposure to computer programming or software development. Students are expected to be curious about artificial intelligence applications and willing to learn through hands"
+      },
+      {
+        "course": "AIE4901",
+        "text": "Refer to the specific requirements of each project Enrollment of a student needs approval from the instructor."
+      },
+      {
+        "course": "AIE4902",
+        "text": "Refer to the specific requirements of each project Enrollment of a student needs approval from the instructor"
+      },
+      {
+        "course": "AIE6001",
+        "text": "Linear algebra, proof-based advanced calculus (or mathematical analysis), calculus-based elementary probability and statistics, elementary stochastic processes."
+      },
+      {
+        "course": "AIE6002",
+        "text": "•Proficient in Python (e.g., numpy, pandas, PyTorch/TensorFlow) •Knowledge of probability, linear algebra, and calculus •Basic knowledge of machine learning and neural networks"
+      },
+      {
+        "course": "AIE6003",
+        "text": "Undergraduate level of linear algebra, analysis, and probability & statistics are required."
+      },
+      {
+        "course": "AIE6008",
+        "text": "This course is designed for master students and assumes foundational knowledge from prior undergraduate’s level study. Specifically: 1) Artificial Intelligence / Machine Learning: Familiarity with bas"
+      },
+      {
+        "course": "AIR5023",
+        "text": "Basic understanding of linear algebra, calculus, and grasp of probability theory are required, along with previous exposure to statistics, differential equations, linear systems, optimization, stochas"
+      },
+      {
+        "course": "AIR5050",
+        "text": "Basic knowledge in engineering mathematics, computer programming, artificial intelligence, machine learning, and/or robotics design, and programming."
+      },
+      {
+        "course": "AIR5051",
+        "text": "Basic knowledge in engineering mathematics, computer programming, artificial intelligence, machine learning, and/or robotics design, and programming."
+      },
+      {
+        "course": "AIR5059",
+        "text": "Students should have basic undergraduate-level knowledge of linear algebra, calculus, probability and statistics, and programming, preferably in Python. Prior exposure to optimization or machine learn"
+      },
+      {
+        "course": "AIR5066",
+        "text": "Calculus/Analysis Linear Algebra Probability and Statistics Computer Programming Machine Learning (preferred but not required)"
+      },
+      {
+        "course": "AIR6063",
+        "text": "College Calculus, Linear Algebra Basic probability and statistics Basic Machine Learning Basic Artificial Intelligence"
+      },
+      {
+        "course": "CHM1011",
+        "text": "For students who have taken Physics and Chemistry in high school"
+      },
+      {
+        "course": "CHM2118",
+        "text": "For students who have taken Analytical Chemistry course"
+      },
+      {
+        "course": "CHM3130",
+        "text": "For students who have taken Organic Chemistry course"
+      },
+      {
+        "course": "CHM3210",
+        "text": "General chemistry"
+      },
+      {
+        "course": "CHM3420",
+        "text": "l MAT-1001: Calculus I l MAT-1002: Calculus II l MAT-2040: Linear Algebra l General Chemistry l General Physics l Physical Chemistry"
+      }
+    ]
+  },
+  "curriculum": {
+    "majors_from_rules": 3,
+    "majors_student_only": 3,
+    "curricula": 7,
+    "curriculum_items": 612,
+    "rule_programmes_without_course_list": [],
+    "course_list_programmes_without_rule": [
+      {
+        "programme": "X及航天科学与地球信息学双主修课程",
+        "rows": 319,
+        "english_guess": ""
+      },
+      {
+        "programme": "X及跨学科数据分析双主修课程",
+        "rows": 261,
+        "english_guess": ""
+      },
+      {
+        "programme": "临床医学",
+        "rows": 65,
+        "english_guess": ""
+      },
+      {
+        "programme": "人工智能",
+        "rows": 114,
+        "english_guess": ""
+      },
+      {
+        "programme": "会计学",
+        "rows": 157,
+        "english_guess": ""
+      },
+      {
+        "programme": "作曲与作曲技术理论",
+        "rows": 57,
+        "english_guess": ""
+      },
+      {
+        "programme": "化学",
+        "rows": 59,
+        "english_guess": ""
+      },
+      {
+        "programme": "国际商务",
+        "rows": 89,
+        "english_guess": ""
+      },
+      {
+        "programme": "国际组织与全球治理",
+        "rows": 43,
+        "english_guess": ""
+      },
+      {
+        "programme": "城市管理",
+        "rows": 33,
+        "english_guess": ""
+      },
+      {
+        "programme": "大数据管理与应用",
+        "rows": 56,
+        "english_guess": ""
+      },
+      {
+        "programme": "市场营销",
+        "rows": 110,
+        "english_guess": ""
+      },
+      {
+        "programme": "应用心理学",
+        "rows": 41,
+        "english_guess": ""
+      },
+      {
+        "programme": "数学与应用数学",
+        "rows": 193,
+        "english_guess": ""
+      },
+      {
+        "programme": "新能源科学与工程",
+        "rows": 87,
+        "english_guess": ""
+      },
+      {
+        "programme": "材料科学与工程",
+        "rows": 101,
+        "english_guess": ""
+      },
+      {
+        "programme": "材料科学与工程及X双主修课程_ X及材料科学与工程学双主修课程",
+        "rows": 276,
+        "english_guess": ""
+      },
+      {
+        "programme": "物理学",
+        "rows": 126,
+        "english_guess": ""
+      },
+      {
+        "programme": "生物信息学",
+        "rows": 56,
+        "english_guess": ""
+      },
+      {
+        "programme": "生物医学工程",
+        "rows": 59,
+        "english_guess": ""
+      },
+      {
+        "programme": "生物科学",
+        "rows": 60,
+        "english_guess": ""
+      },
+      {
+        "programme": "电子与计算机工程",
+        "rows": 118,
+        "english_guess": ""
+      },
+      {
+        "programme": "电子信息工程",
+        "rows": 97,
+        "english_guess": ""
+      },
+      {
+        "programme": "经济学",
+        "rows": 110,
+        "english_guess": ""
+      },
+      {
+        "programme": "翻译",
+        "rows": 46,
+        "english_guess": ""
+      },
+      {
+        "programme": "英语",
+        "rows": 51,
+        "english_guess": ""
+      },
+      {
+        "programme": "金融学",
+        "rows": 81,
+        "english_guess": ""
+      },
+      {
+        "programme": "金融工程",
+        "rows": 64,
+        "english_guess": ""
+      },
+      {
+        "programme": "音乐学",
+        "rows": 63,
+        "english_guess": ""
+      },
+      {
+        "programme": "音乐表演",
+        "rows": 150,
+        "english_guess": ""
+      }
+    ],
+    "variants_with_source_matched": [
+      {
+        "major": "Computer Science and Engineering",
+        "version_year": 2024,
+        "rows": 76
+      },
+      {
+        "major": "Data Science and Big Data Technology",
+        "version_year": 2024,
+        "rows": 89
+      },
+      {
+        "major": "Statistics",
+        "version_year": 2025,
+        "rows": 94
+      }
+    ],
+    "variants_without_source_matched": [
+      {
+        "major": "Computer Science and Engineering",
+        "version_year": 2023,
+        "source_doc": "Study Scheme - CSE_2023-24_Circular (AB2024_C036).pdf",
+        "fallback_rows": 76
+      },
+      {
+        "major": "Data Science and Big Data Technology",
+        "version_year": 2023,
+        "source_doc": "Study Scheme - DS_2023-24_3rd(2025)_20250714.pdf",
+        "fallback_rows": 89
+      },
+      {
+        "major": "Statistics",
+        "version_year": 2023,
+        "source_doc": "study_scheme_-_stat_2022-23_and_2023-24_circularab2026_c015_3.pdf",
+        "fallback_rows": 94
+      },
+      {
+        "major": "Statistics",
+        "version_year": 2024,
+        "source_doc": "study_scheme_-_stat_2024-25_circularab2026_c015_2.pdf",
+        "fallback_rows": 94
+      }
+    ],
+    "total_credits_unresolved": [
+      {
+        "curriculum_id": 1000,
+        "major": "Computer Science and Engineering",
+        "version_year": 2023,
+        "major_credits": "70",
+        "total_credits": "0.0"
+      },
+      {
+        "curriculum_id": 1001,
+        "major": "Computer Science and Engineering",
+        "version_year": 2024,
+        "major_credits": "70",
+        "total_credits": "0.0"
+      },
+      {
+        "curriculum_id": 1002,
+        "major": "Data Science and Big Data Technology",
+        "version_year": 2023,
+        "major_credits": "70",
+        "total_credits": "0.0"
+      },
+      {
+        "curriculum_id": 1003,
+        "major": "Data Science and Big Data Technology",
+        "version_year": 2024,
+        "major_credits": "70",
+        "total_credits": "0.0"
+      },
+      {
+        "curriculum_id": 1004,
+        "major": "Statistics",
+        "version_year": 2023,
+        "major_credits": "70",
+        "total_credits": "0.0"
+      },
+      {
+        "curriculum_id": 1005,
+        "major": "Statistics",
+        "version_year": 2024,
+        "major_credits": "70",
+        "total_credits": "0.0"
+      },
+      {
+        "curriculum_id": 1006,
+        "major": "Statistics",
+        "version_year": 2025,
+        "major_credits": "70",
+        "total_credits": "0.0"
+      }
+    ],
+    "requirement_type_counts": {
+      "ELECTIVE": 163,
+      "REQUIRED": 143,
+      "STREAM": 306
+    },
+    "requirement_type_fallback": {
+      "Option B": 20,
+      "Programming Methodology": 2
+    },
+    "items_without_catalogue_course": {
+      "STA3042": 3,
+      "EIE3280": 2,
+      "EIE4512": 2
+    },
+    "curriculum_major_missing": []
+  },
+  "students": {
+    "sheets_parsed": 8,
+    "record_rows": 288,
+    "skipped_transcript_rows": [],
+    "duplicate_record_keys": 0,
+    "entry_year_mismatch": [],
+    "derived_emails": [
+      {
+        "sheet": "CHEN MIC",
+        "email": "122040156@link.cuhk.edu.cn"
+      },
+      {
+        "sheet": "WANG SOPHIA",
+        "email": "122040267@link.cuhk.edu.cn"
+      },
+      {
+        "sheet": "LIU JAMES",
+        "email": "122040384@link.cuhk.edu.cn"
+      },
+      {
+        "sheet": "EAN JIE",
+        "email": "122040491@link.cuhk.edu.cn"
+      }
+    ],
+    "derived_entry_years": [
+      {
+        "student_no": "122040156",
+        "entry_year": 2022
+      },
+      {
+        "student_no": "122040267",
+        "entry_year": 2022
+      },
+      {
+        "student_no": "122040384",
+        "entry_year": 2022
+      },
+      {
+        "student_no": "122040491",
+        "entry_year": 2022
+      },
+      {
+        "student_no": "122010001",
+        "entry_year": 2022
+      },
+      {
+        "student_no": "123030001",
+        "entry_year": 2023
+      },
+      {
+        "student_no": "124010001",
+        "entry_year": 2024
+      },
+      {
+        "student_no": "125030003",
+        "entry_year": 2025
+      }
+    ],
+    "distinct_course_codes": 124,
+    "grade_counts": {
+      "A": 69,
+      "A-": 64,
+      "B": 40,
+      "B+": 52,
+      "B-": 27,
+      "C": 29,
+      "C+": 2,
+      "DI": 2,
+      "P": 1,
+      "PA": 2
+    },
+    "status_counts": {
+      "Completed": 288
+    },
+    "blank_scores": 5,
+    "semesters": [
+      "2022-23 Term 1",
+      "2022-23 Term 2",
+      "2023-24 Summer",
+      "2023-24 Term 1",
+      "2023-24 Term 2",
+      "2024-25 Summer",
+      "2024-25 Term 1",
+      "2024-25 Term 2",
+      "2025-26 Term 1",
+      "2025-26 Term 2"
+    ]
+  },
+  "course_records": {
+    "rows": 288,
+    "unresolved_course_codes": [
+      {
+        "code": "MIS23012",
+        "occurrences": 1
+      }
+    ],
+    "malformed_course_codes": [
+      {
+        "code": "MIS23012",
+        "occurrences": 1
+      }
+    ],
+    "duplicate_keys_dropped": [],
+    "passed_true": 288,
+    "passed_false": 0,
+    "record_status_counts": {
+      "COMPLETED": 288
+    }
+  },
+  "terms": {
+    "from_transcripts": 288,
+    "unparsed_semesters": [],
+    "current": "2026-27-1"
+  },
+  "offerings": {
+    "requested_codes": [
+      "ACT2121",
+      "CSC3100",
+      "DDA3020",
+      "ECO2011",
+      "MGT2020",
+      "STA2001"
+    ],
+    "missing_codes": [],
+    "offerings": 6,
+    "enrollments": 3,
+    "enrollment_courses": [
+      "ACT2121",
+      "ECO2011",
+      "MGT2020"
+    ],
+    "term": "2026-27-1"
+  },
+  "students_vs_v2": {
+    "students": 8,
+    "missing_sys_user": [],
+    "unknown_major": [],
+    "email_mismatch_with_v2": [],
+    "name_mismatch_with_v2": []
+  },
+  "competency": {
+    "pools": 67,
+    "pool_schools": {
+      "HSS": 7,
+      "MED": 10,
+      "MUS": 7,
+      "SAI": 7,
+      "SDS": 9,
+      "SME": 10,
+      "SPP": 7,
+      "SSE": 10
+    },
+    "min_score_kept": "6.0",
+    "score_rows_total": 13907,
+    "score_rows_at_or_above_threshold": 3943,
+    "score_rows_below_threshold": 9964,
+    "score_rows_unresolved_course": 10,
+    "skill_tags": 67,
+    "competencies": 3910,
+    "duplicate_pairs_dropped": 23,
+    "unresolved_course_codes": [
+      {
+        "code": "DDA5002",
+        "occurrences": 10
+      }
+    ],
+    "pools_without_scores": []
+  },
+  "defaulted_columns": [
+    {
+      "table": "edu_course",
+      "column": "title_en",
+      "default": "'' (empty string)",
+      "reason": "the SIS export has no English title; filled from All_Course_Lists 'Course Title (English)' when the code is listed, otherwise left empty"
+    },
+    {
+      "table": "edu_course",
+      "column": "category",
+      "default": "Major",
+      "reason": "heuristic from the SIS subject prefix (ITE->IT, PED->PE, CHI/CLC->Chinese, ENG/ENL/ENB->English, GE*/GGE/GFH/GFN/BGE->GenEd, everything else->Major)"
+    },
+    {
+      "table": "edu_course",
+      "column": "credits",
+      "default": "0.00",
+      "reason": "SIS units that are blank or ranges such as '0.00 - 10.00'"
+    },
+    {
+      "table": "edu_course",
+      "column": "level",
+      "default": "0",
+      "reason": "courses whose code carries no 3-4 digit numeric part"
+    },
+    {
+      "table": "edu_curriculum",
+      "column": "total_credits",
+      "default": "0.0",
+      "reason": "the general/college requirement is not part of the listed inputs, so a 120-credit total cannot be derived (70 major + 48 assumed = 118)"
+    },
+    {
+      "table": "edu_curriculum_item",
+      "column": "requirement_type",
+      "default": "REQUIRED",
+      "reason": "Section text is empty or matches none of the V1 vocabulary, e.g. the extracted table header 'Code Course Title (English) ...'"
+    },
+    {
+      "table": "edu_major",
+      "column": "degree_type",
+      "default": "'' (empty string)",
+      "reason": "degree type is not present in the listed inputs"
+    },
+    {
+      "table": "edu_major",
+      "column": "major_name_zh",
+      "default": "'' (empty string)",
+      "reason": "SME student majors have no Chinese programme name in the listed inputs"
+    },
+    {
+      "table": "edu_student",
+      "column": "email",
+      "default": "'<student_no>@link.cuhk.edu.cn'",
+      "reason": "the four demo sheets of student_demo_data.xlsx carry no email column; the address is derived and cross-checked against V2 sys_user"
+    },
+    {
+      "table": "edu_student",
+      "column": "entry_year",
+      "default": "decoded from student_no (1YYxxxxxx -> 20YY)",
+      "reason": "the admission year is only implicit in the student number; the decoded value is cross-checked against Stu_basic_info.Year for the SME students"
+    },
+    {
+      "table": "edu_term",
+      "column": "start_date / end_date",
+      "default": "NULL",
+      "reason": "the transcripts carry no calendar dates, only 'YYYY-YY Term N'"
+    },
+    {
+      "table": "edu_course_record",
+      "column": "score",
+      "default": "NULL",
+      "reason": "pass/fail style rows (e.g. ITE1000 PA) and blank Score % cells"
+    },
+    {
+      "table": "edu_course_record",
+      "column": "record_status",
+      "default": "COMPLETED",
+      "reason": "every transcript row is marked Completed; passed='1' when the grade is not F/W/IP/U and the status is Completed"
+    }
+  ],
+  "data_quality_notes": [
+    "Score % in the demo transcripts is a scaled cohort score (about 30-52), not a 0-100 percentage, and it does not track the letter grade consistently.",
+    "The STUDENT INFORMATION 'Cumulative GPA' of a sheet can differ from the last 'Cumulative GPA' of its SEMESTER SUMMARY block (e.g. CHEN MIC 3.111 vs 3.153); edu_student.cum_gpa uses the STUDENT INFORMATION value, rounded to the two decimals that decimal(3,2) allows.",
+    "Only 955 of the 3425 SIS catalogue codes appear in All_Course_Lists, so edu_course.title_en stays empty for the other 2470; conversely 496 codes listed in All_Course_Lists are absent from the SIS export and are not seeded as courses.",
+    "Some SIS data cells are Chinese prose (grading_basis, component, school, academic_org) and are stored verbatim, including mixed '已评分'/'Pass/Fail'.",
+    "Nested AND/OR prerequisite logic cannot be represented by the group_no model; text such as '(A or B) and (C or D)' is flattened to OR alternatives of the codes inside each split fragment (documented approximation).",
+    "Prerequisite text is sometimes qualitative ('Basic knowledge of Python') or uses non-catalogue codes (STA2003, MATH2040, EIE3001): these produce no edges and are listed above instead of broken foreign keys.",
+    "Competency scores cover 13 course codes that are not SIS codes: 12 are bracketed spellings such as 'ECO(2011)' that normalise to a real code, and DDA5002 (10 rows) does not exist in the export and is skipped.",
+    "Only 3 of the 33 programmes in All_Course_Lists are covered by SDS_major_rules_index.json; the SME programmes (会计学/金融工程/...) have no rule variants, so no curriculum is generated for the SME demo students' majors."
+  ]
+}

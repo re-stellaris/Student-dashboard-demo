@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.education.enrollment.mapper.EduEnrollmentMapper">
+
+    <resultMap type="com.ruoyi.education.enrollment.domain.EduEnrollment" id="EduEnrollmentResult">
+        <result property="enrollmentId" column="enrollment_id" />
+        <result property="studentId"    column="student_id"    />
+        <result property="offeringId"   column="offering_id"   />
+        <result property="status"       column="status"        />
+        <result property="enrolledAt"   column="enrolled_at"   />
+        <result property="courseCode"   column="course_code"   />
+        <result property="courseTitle"  column="course_title"  />
+        <result property="units"        column="units"         />
+        <result property="termCode"     column="term_code"     />
+        <result property="termName"     column="term_name"     />
+        <result property="studentNo"    column="student_no"    />
+        <result property="studentName"  column="student_name"  />
+        <result property="createBy"     column="create_by"     />
+        <result property="createTime"   column="create_time"   />
+        <result property="updateBy"     column="update_by"     />
+        <result property="updateTime"   column="update_time"   />
+    </resultMap>
+
+    <sql id="selectEnrollmentVo">
+        select e.enrollment_id, e.student_id, e.offering_id, e.status, e.enrolled_at,
+               e.create_by, e.create_time, e.update_by, e.update_time,
+               c.code as course_code, c.title_zh as course_title, c.credits as units,
+               t.term_code, t.term_name, s.student_no, s.name as student_name
+        from edu_enrollment e
+        left join edu_course_offering o on o.offering_id = e.offering_id
+        left join edu_course c on c.course_id = o.course_id
+        left join edu_term t on t.term_id = o.term_id
+        left join edu_student s on s.student_id = e.student_id
+    </sql>
+
+    <select id="selectEnrollmentList" parameterType="com.ruoyi.education.enrollment.domain.EduEnrollment" resultMap="EduEnrollmentResult">
+        <include refid="selectEnrollmentVo"/>
+        <where>
+            <if test="studentId != null">
+                and e.student_id = #{studentId}
+            </if>
+            <if test="offeringId != null">
+                and e.offering_id = #{offeringId}
+            </if>
+            <if test="status != null and status != ''">
+                and e.status = #{status}
+            </if>
+            <if test="courseCode != null and courseCode != ''">
+                and c.code like concat('%', #{courseCode}, '%')
+            </if>
+        </where>
+        order by t.term_code desc, c.code asc, e.enrollment_id desc
+    </select>
+
+    <select id="selectEnrollmentById" parameterType="Long" resultMap="EduEnrollmentResult">
+        <include refid="selectEnrollmentVo"/>
+        where e.enrollment_id = #{enrollmentId}
+    </select>
+
+    <select id="selectByStudentAndOffering" resultMap="EduEnrollmentResult">
+        <include refid="selectEnrollmentVo"/>
+        where e.student_id = #{studentId}
+          and e.offering_id = #{offeringId}
+        limit 1
+    </select>
+
+    <select id="selectByStudentId" parameterType="Long" resultMap="EduEnrollmentResult">
+        <include refid="selectEnrollmentVo"/>
+        where e.student_id = #{studentId}
+        order by t.term_code desc, c.code asc, e.enrollment_id desc
+    </select>
+
+    <select id="countByOffering" parameterType="Long" resultType="int">
+        select count(1) from edu_enrollment where offering_id = #{offeringId} and status = 'ENROLLED'
+    </select>
+
+    <select id="selectPrereqRows" parameterType="Long" resultType="com.ruoyi.education.enrollment.dto.PrerequisiteRow">
+        select p.group_no            as groupNo,
+               p.prereq_course_id    as prereqCourseId,
+               c.code                as prereqCode,
+               c.title_zh            as prereqTitle
+        from edu_course_prereq p
+        inner join edu_course c on c.course_id = p.prereq_course_id
+        where p.course_id = #{courseId}
+        order by p.group_no asc, c.code asc
+    </select>
+
+    <insert id="insertEnrollment" parameterType="com.ruoyi.education.enrollment.domain.EduEnrollment" useGeneratedKeys="true" keyProperty="enrollmentId">
+        insert into edu_enrollment (
+            student_id,
+            offering_id,
+            <if test="status != null and status != ''">status, </if>
+            <if test="enrolledAt != null">enrolled_at, </if>
+            <if test="createBy != null and createBy != ''">create_by, </if>
+            create_time
+        ) values (
+            #{studentId},
+            #{offeringId},
+            <if test="status != null and status != ''">#{status}, </if>
+            <if test="enrolledAt != null">#{enrolledAt}, </if>
+            <if test="createBy != null and createBy != ''">#{createBy}, </if>
+            sysdate()
+        )
+    </insert>
+
+    <update id="updateStatus">
+        update edu_enrollment
+        set status = #{status},
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy}, </if>
+            update_time = sysdate()
+        where enrollment_id = #{enrollmentId}
+    </update>
+
+    <delete id="deleteEnrollmentByIds" parameterType="Long">
+        delete from edu_enrollment where enrollment_id in
+        <foreach item="enrollmentId" collection="array" open="(" separator="," close=")">
+            #{enrollmentId}
+        </foreach>
+    </delete>
+
+</mapper>
