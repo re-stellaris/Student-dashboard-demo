@@ -23,6 +23,8 @@ const whiteList = ['/login', '/register']
  * 注：/education/course、/education/curriculum、/education/analytics 是公共数据，不在此列。
  */
 const EDUCATION_SCOPE_RULES: Array<{ match: RegExp; role: string; scope: 'student' | 'teacher' }> = [
+  // 学生端门户首页（本人学业数据）；课程详情/通识/指南是公共内容，不拦
+  { match: /^\/student\/?$/, role: 'STUDENT', scope: 'student' },
   { match: /^\/education\/(dashboard|records|skill|planner)(\/|$)/, role: 'STUDENT', scope: 'student' },
   { match: /^\/education\/teaching(\/|$)/, role: 'TEACHER', scope: 'teacher' }
 ]
@@ -76,12 +78,12 @@ router.beforeEach(async (to, from) => {
     // ---- 教育平台：按角色直达 + 角色不匹配的友好拦截 ----
     const roles = useUserStore().roles
 
-    // 学生/教师登录后（或访问根路径时）直接进教育平台，不再落到若依通用首页。
-    // 管理员的首页仍是若依控制台首页，故不做跳转。
+    // 学生登录后直达学生端门户（保留旧版设计的主控台），不再落到若依通用首页；
+    // 教师进教师授课页；管理员的首页仍是若依控制台首页，故不做跳转。
     if ((to.path === '/' || to.path === '/index') && !to.query.redirect) {
       if (roles.includes('STUDENT')) {
         NProgress.done()
-        return { path: '/education/dashboard', replace: true }
+        return { path: '/student', replace: true }
       }
       if (roles.includes('TEACHER')) {
         NProgress.done()

@@ -38,6 +38,32 @@ export const constantRoutes = [
     ]
   },
   {
+    // 学生端门户：独立布局（保留旧版 HTML 设计），不套若依侧边栏/表格界面。
+    // 全部是常量路由，不出现在后端菜单中。
+    path: '/student',
+    component: () => import('@/views/student/dashboard/index.vue'),
+    hidden: true,
+    meta: { title: '学习主控台' }
+  },
+  {
+    path: '/student/course/:code',
+    component: () => import('@/views/student/course-detail/index.vue'),
+    hidden: true,
+    meta: { title: '课程详情' }
+  },
+  {
+    path: '/student/ge/:area',
+    component: () => import('@/views/student/ge-area/index.vue'),
+    hidden: true,
+    meta: { title: '通识教育' }
+  },
+  {
+    path: '/student/guide',
+    component: () => import('@/views/student/guide/index.vue'),
+    hidden: true,
+    meta: { title: '使用指南' }
+  },
+  {
     // 教育平台的角色不匹配提示页（管理员/教师误入学生本人数据页时跳到这里）。
     // 必须放在常量路由里：它不出现在后端菜单中，否则动态路由无法命中。
     path: '/no-access',

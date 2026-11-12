@@ -45,6 +45,11 @@ export default defineConfig(({ mode, command }) => {
       port: 80,
       host: true,
       open: true,
+      // Windows 上编辑器/工具做原子写会临时生成 .xxx.tmpdir 目录，
+      // chokidar 监听到会抛 EBUSY 直接把 dev server 打挂，这里忽略掉。
+      watch: {
+        ignored: ['**/.*.tmpdir/**', '**/.*.tmp*/**', '**/.build-tmp/**', '**/.local/**']
+      },
       proxy: {
         // https://cn.vitejs.dev/config/#server-proxy
         '/dev-api': {

@@ -65,7 +65,8 @@ const accounts = computed(() =>
 )
 
 function goHome(): void {
-  router.push(scope.value === 'student' ? '/education/dashboard' : '/education/teaching')
+  // 学生端门户 / 若依控制台首页
+  router.push(scope.value === 'student' ? '/student' : '/education/teaching')
 }
 
 function goBack(): void {

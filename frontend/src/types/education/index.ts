@@ -103,6 +103,15 @@ export interface EduCoursePrereq {
   code?: string
   /** 先修课程名称（部分实现使用短字段名） */
   title?: string
+  // ---- 后端实际返回的字段名（与 VO 对齐，见 EduCoursePrereqMapper.xml）----
+  /** 先修课程代码（后端字段名 prereqCode） */
+  prereqCode?: string
+  /** 先修课程名称（后端字段名 prereqTitle） */
+  prereqTitle?: string
+  /** 目标课程代码（联表返回） */
+  courseCode?: string
+  /** 当前学生是否已满足该先修（服务端判定，仅 /prereqs 联表时返回） */
+  satisfied?: boolean
 }
 
 /** 缺失的先修课程（先修检查 / 推荐结果共用） */
@@ -782,6 +791,11 @@ export interface CourseCompetency {
   courseTitle?: string
   /** 关联课程数（学院能力池聚合时补充） */
   courseCount?: number
+  // ---- 后端实际返回的字段名（与 VO 对齐，见 EduCourseCompetencyMapper.xml）----
+  /** 技能标签名称（后端字段名 skillName） */
+  skillName?: string
+  /** 技能分类 / 学院（后端字段名 skillCategory） */
+  skillCategory?: string
 }
 
 /** 学院能力池查询参数 */

@@ -35,6 +35,7 @@
 | [`adr/ADR-0005-database-migration-strategy.md`](adr/ADR-0005-database-migration-strategy.md) | `V1..V6` 迁移编号、生成式种子、幂等要求、外键/CHECK 策略、旧 SQL 为何退役 | 后端、运维 | 已接受 |
 | [`adr/ADR-0006-security-baseline.md`](adr/ADR-0006-security-baseline.md) | 资源级授权 vs 菜单权限、身份只取 JWT、教师/学生归属校验、SSO 如何延后、密钥与账号加固 | 后端、运维 | 已接受 |
 | [`adr/ADR-0007-monorepo-layout.md`](adr/ADR-0007-monorepo-layout.md) | 为什么 `backend/` + `frontend/` + `data/` + `pipeline/` + `deploy/` + `docs/` 同仓；离线 ETL 为什么不是运行时模块 | 全体 | 已接受 |
+| [`adr/ADR-0008-student-portal-preserves-legacy-design.md`](adr/ADR-0008-student-portal-preserves-legacy-design.md) | 学生端（`/student/**`）保留旧版 HTML 设计、管理端（`/education/**`）用若依表格界面；CSS 用 `.sp-root` 隔离；数据与鉴权换源 | 前端、产品 | 已接受 |
 | [`migration-map.md`](migration-map.md) | 旧→新文件映射、分支策略、能力对照表、尚未完成项 | 全体 | 迁移期有效 |
 | [`risks.md`](risks.md) | 方案 ch.10 的风险登记册 + 本仓库已有的具体缓解措施落点 | 技术负责人、产品 | 随迭代更新 |
 
