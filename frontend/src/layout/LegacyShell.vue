@@ -38,6 +38,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import useUserStore from '@/store/modules/user'
+import auth from '@/plugins/auth'
 
 interface ShellLink {
   path: string
@@ -70,10 +71,9 @@ const isAdmin = computed<boolean>(() => userStore.roles.includes('admin'))
 const isStudent = computed<boolean>(() => userStore.roles.includes('STUDENT'))
 
 const links = computed<ShellLink[]>(() => {
-  const permissions = userStore.permissions
-  // admin 拥有全部权限（若依用一个通配 '*' 表示），此时全部展示
-  const wildcard = permissions.includes('*')
-  return ALL_LINKS.filter((link) => !link.permission || wildcard || permissions.includes(link.permission))
+  // 必须用若依的 auth.hasPermi 判断：超级管理员拿到的是通配权限 "*:*:*"，
+  // 直接写 permissions.includes('*') 会判假，导致 admin 的整条导航栏为空。
+  return ALL_LINKS.filter((link) => !link.permission || auth.hasPermi(link.permission))
 })
 
 const displayName = computed<string>(() => userStore.nickName || userStore.name || '未登录')

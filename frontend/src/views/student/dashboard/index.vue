@@ -722,6 +722,7 @@
 <script setup lang="ts" name="StudentDashboard">
 import * as echarts from 'echarts'
 import useUserStore from '@/store/modules/user'
+import auth from '@/plugins/auth'
 import { getCourseOptions, listCourse } from '@/api/education/course'
 import { getCurriculum, getCurriculumByMajor, listCurriculum, listMajor } from '@/api/education/curriculum'
 import { getMyProgress, getMyStudent, listMyRecord } from '@/api/education/enrollment'
@@ -1169,9 +1170,7 @@ const userStore = useUserStore()
  * 学生端（本页）默认无权限，按产品决策隐藏整块，且不再发起必然 403 的请求。
  * admin 与教师拥有该权限，若将来放开学生访问，只需给角色补权限即可自动显示。
  */
-const canViewCompetencyPool = computed<boolean>(
-  () => userStore.permissions.includes('edu:analytics:view')
-)
+const canViewCompetencyPool = computed<boolean>(() => auth.hasPermi('edu:analytics:view'))
 
 const loading = ref<boolean>(false)
 const unbound = ref<boolean>(false)
