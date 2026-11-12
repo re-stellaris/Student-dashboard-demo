@@ -1,5 +1,13 @@
 <template>
   <div class="app-container edu-records">
+    <!-- 页面标题区 -->
+    <div class="lg-head">
+      <div>
+        <h2>我的成绩</h2>
+        <p>按学期与类别查看本人成绩明细，并对照培养方案汇总学分完成度。</p>
+      </div>
+    </div>
+
     <!-- 错误状态 -->
     <el-alert v-if="errorMessage" type="error" :closable="false" show-icon class="mb8">
       <template #title>
@@ -53,22 +61,24 @@
     </el-card>
 
     <!-- 查询条件 -->
-    <el-form v-show="showSearch" :model="queryParams" :inline="true" class="query-form">
-      <el-form-item label="学期" prop="termCode">
-        <el-select v-model="queryParams.termCode" placeholder="全部学期" clearable style="width: 200px">
-          <el-option v-for="item in termOptions" :key="item.value" :label="item.label" :value="item.value" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="课程类别" prop="category">
-        <el-select v-model="queryParams.category" placeholder="全部类别" clearable style="width: 180px">
-          <el-option v-for="item in categoryOptions" :key="item.value" :label="item.label" :value="item.value" />
-        </el-select>
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
-        <el-button icon="Refresh" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
+    <div v-show="showSearch" class="lg-card mb8" style="padding-bottom: 0">
+      <el-form :model="queryParams" :inline="true" class="query-form">
+        <el-form-item label="学期" prop="termCode">
+          <el-select v-model="queryParams.termCode" placeholder="全部学期" clearable style="width: 200px">
+            <el-option v-for="item in termOptions" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="课程类别" prop="category">
+          <el-select v-model="queryParams.category" placeholder="全部类别" clearable style="width: 180px">
+            <el-option v-for="item in categoryOptions" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
+          <el-button icon="Refresh" @click="resetQuery">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </div>
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
@@ -340,6 +350,7 @@ onMounted(() => {
   getList()
 })
 </script>
+
 
 <style scoped lang="scss">
 .edu-records {

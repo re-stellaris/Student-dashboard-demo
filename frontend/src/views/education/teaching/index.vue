@@ -1,5 +1,13 @@
 <template>
   <div class="app-container">
+    <!-- 页面标题区 -->
+    <div class="lg-head">
+      <div>
+        <h2>教师授课</h2>
+        <p>查看本人授课的课程与作业，发布作业并为学生提交评分。</p>
+      </div>
+    </div>
+
     <el-row :gutter="16">
       <!-- 左：我的授课 -->
       <el-col :xs="24" :md="8" :lg="7">
@@ -503,6 +511,7 @@ onMounted(() => {
   loadOfferings()
 })
 </script>
+
 
 <style scoped lang="scss">
 .panel {

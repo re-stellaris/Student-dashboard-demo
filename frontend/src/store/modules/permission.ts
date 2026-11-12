@@ -2,6 +2,7 @@ import auth from '@/plugins/auth'
 import router, { constantRoutes, dynamicRoutes } from '@/router'
 import { getRouters } from '@/api/menu'
 import Layout from '@/layout/index.vue'
+import LegacyShell from '@/layout/LegacyShell.vue'
 import ParentView from '@/components/ParentView/index.vue'
 import InnerLink from '@/layout/components/InnerLink/index.vue'
 
@@ -41,6 +42,7 @@ const usePermissionStore = defineStore(
             const defaultData = JSON.parse(JSON.stringify(res.data))
             const sidebarRoutes = filterAsyncRouter(sdata)
             const rewriteRoutes = filterAsyncRouter(rdata, false, true)
+            applyLegacyShell(rewriteRoutes)
             const defaultRoutes = filterAsyncRouter(defaultData)
             const asyncRoutes = filterDynamicRoutes(dynamicRoutes)
             asyncRoutes.forEach(route => { router.addRoute(route) })
@@ -55,9 +57,22 @@ const usePermissionStore = defineStore(
     }
   })
 
+/**
+ * 教育平台的页面改用「旧版顶部导航外壳」而不是若依 Layout（见 ADR-0009）。
+ *
+ * 只替换该父路由的容器组件，子路由（教育平台各页面）、后端菜单、
+ * 按钮权限、动态路由注册全部照旧；若依自带的 system/monitor/tool 仍然走 Layout。
+ */
+function applyLegacyShell(routes: any[]): void {
+  routes.forEach((route) => {
+    if (route && (route.path === '/education' || route.path === 'education')) {
+      route.component = LegacyShell
+    }
+  })
+}
+
 // 遍历后台传来的路由字符串，转换为组件对象
-function filterAsyncRouter(asyncRouterMap: any[], lastRouter = false, type = false) {
-  return asyncRouterMap.filter(route => {
+function filterAsyncRouter(asyncRouterMap: any[], lastRouter = false, type = false) {  return asyncRouterMap.filter(route => {
     if (type && route.children) {
       route.children = filterChildren(route.children)
     }

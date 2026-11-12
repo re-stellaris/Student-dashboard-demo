@@ -66,17 +66,11 @@ export const constantRoutes = [
   {
     // 教育平台的角色不匹配提示页（管理员/教师误入学生本人数据页时跳到这里）。
     // 必须放在常量路由里：它不出现在后端菜单中，否则动态路由无法命中。
+    // 独立页面（不进若依 Layout），与旧版风格保持一致。
     path: '/no-access',
-    component: Layout,
+    component: () => import('@/views/education/no-access/index.vue'),
     hidden: true,
-    children: [
-      {
-        path: '',
-        component: () => import('@/views/education/no-access/index.vue'),
-        name: 'EducationNoAccess',
-        meta: { title: '无访问权限', icon: 'education' }
-      }
-    ]
+    meta: { title: '无访问权限' }
   },
   {
     path: '/login',

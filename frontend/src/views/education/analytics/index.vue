@@ -1,5 +1,13 @@
 <template>
   <div class="app-container">
+    <!-- 页面标题区 -->
+    <div class="lg-head">
+      <div>
+        <h2>学情分析</h2>
+        <p>按学院与关键字查看公共能力池，并追溯单门课程的技能标签关联依据。</p>
+      </div>
+    </div>
+
     <!-- 筛选 -->
     <el-card shadow="never" class="mb16">
       <el-form :model="queryParams" ref="queryRef" :inline="true" @submit.prevent>
@@ -345,6 +353,7 @@ onBeforeUnmount(() => {
   disposeChart()
 })
 </script>
+
 
 <style scoped lang="scss">
 .panel {

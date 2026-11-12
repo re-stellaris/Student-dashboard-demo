@@ -1,53 +1,55 @@
 <template>
   <div class="app-container">
-    <!-- 检索条件 -->
-    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="80px">
-      <el-form-item label="课程代码" prop="code">
-        <el-input v-model="queryParams.code" placeholder="如 CSC1001" clearable style="width: 180px" @keyup.enter="handleQuery" />
-      </el-form-item>
-      <el-form-item label="课程名称" prop="title">
-        <el-input v-model="queryParams.title" placeholder="中文名或英文名" clearable style="width: 200px" @keyup.enter="handleQuery" />
-      </el-form-item>
-      <el-form-item label="开课学院" prop="school">
-        <el-select v-model="queryParams.school" placeholder="全部学院" clearable filterable style="width: 200px">
-          <el-option v-for="item in optionSet.schools" :key="item" :label="item" :value="item" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="课程类别" prop="category">
-        <el-select v-model="queryParams.category" placeholder="全部类别" clearable style="width: 160px">
-          <el-option v-for="item in optionSet.categories" :key="item" :label="item" :value="item" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="课程层级" prop="level">
-        <el-select v-model="queryParams.level" placeholder="全部层级" clearable style="width: 140px">
-          <el-option v-for="item in optionSet.levels" :key="item" :label="String(item)" :value="item" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="大纲" prop="hasOutline">
-        <el-select v-model="queryParams.hasOutline" placeholder="不限" clearable style="width: 140px">
-          <el-option label="已有大纲" :value="true" />
-          <el-option label="缺少大纲" :value="false" />
-        </el-select>
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
-        <el-button icon="Refresh" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
-
-    <!-- 操作按钮 -->
-    <el-row :gutter="10" class="mb8">
-      <el-col :span="1.5">
+    <!-- 页面标题区 + 原有操作按钮组 -->
+    <div class="lg-head">
+      <div>
+        <h2>课程中心</h2>
+        <p>按代码 / 名称 / 学院 / 类别检索课程，查看课程基础信息与先修关系。</p>
+      </div>
+      <div class="lg-head-actions">
         <el-button type="primary" plain icon="Plus" @click="handleAdd" v-hasPermi="['edu:course:add']">新增课程</el-button>
-      </el-col>
-      <el-col :span="1.5">
         <el-button type="success" plain icon="Edit" :disabled="single" @click="handleUpdate()" v-hasPermi="['edu:course:edit']">修改</el-button>
-      </el-col>
-      <el-col :span="1.5">
         <el-button type="danger" plain icon="Delete" :disabled="multiple" @click="handleDelete()" v-hasPermi="['edu:course:remove']">删除</el-button>
-      </el-col>
-      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
-    </el-row>
+        <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
+      </div>
+    </div>
+
+    <!-- 检索条件 -->
+    <div v-show="showSearch" class="lg-card mb8" style="padding-bottom: 0">
+      <el-form :model="queryParams" ref="queryRef" :inline="true" label-width="80px">
+        <el-form-item label="课程代码" prop="code">
+          <el-input v-model="queryParams.code" placeholder="如 CSC1001" clearable style="width: 180px" @keyup.enter="handleQuery" />
+        </el-form-item>
+        <el-form-item label="课程名称" prop="title">
+          <el-input v-model="queryParams.title" placeholder="中文名或英文名" clearable style="width: 200px" @keyup.enter="handleQuery" />
+        </el-form-item>
+        <el-form-item label="开课学院" prop="school">
+          <el-select v-model="queryParams.school" placeholder="全部学院" clearable filterable style="width: 200px">
+            <el-option v-for="item in optionSet.schools" :key="item" :label="item" :value="item" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="课程类别" prop="category">
+          <el-select v-model="queryParams.category" placeholder="全部类别" clearable style="width: 160px">
+            <el-option v-for="item in optionSet.categories" :key="item" :label="item" :value="item" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="课程层级" prop="level">
+          <el-select v-model="queryParams.level" placeholder="全部层级" clearable style="width: 140px">
+            <el-option v-for="item in optionSet.levels" :key="item" :label="String(item)" :value="item" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="大纲" prop="hasOutline">
+          <el-select v-model="queryParams.hasOutline" placeholder="不限" clearable style="width: 140px">
+            <el-option label="已有大纲" :value="true" />
+            <el-option label="缺少大纲" :value="false" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
+          <el-button icon="Refresh" @click="resetQuery">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </div>
 
     <el-alert v-if="errorMsg" :title="errorMsg" type="error" show-icon :closable="false" class="mb8" />
     <el-alert
@@ -623,6 +625,7 @@ function handleDelete(row?: EduCourse): void {
 getList()
 loadOptions()
 </script>
+
 
 <style scoped lang="scss">
 .section-action {

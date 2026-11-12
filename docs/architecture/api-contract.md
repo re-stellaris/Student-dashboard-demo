@@ -158,3 +158,150 @@
 | `teacher_li` | `admin123` | TEACHER | 本人授课课程 |
 
 > 初始密码与若依默认一致，**上线前必须修改**（见 `docs/architecture/adr/ADR-0006-security-baseline.md`）。
+
+## 9. 导师看板（advisor）
+
+旧版导师看板（`legacy/aa_dashboard_v2.html`）迁移后的只读聚合接口，页面为
+`views/education/advisor/index.vue`（`/education/advisor`）。三个接口权限统一为
+`edu:advisor:view`（菜单与 `V7__edu_advisor_permission.sql` 已就绪）。
+
+| 方法 | 路径 | 说明 | 权限 |
+|---|---|---|---|
+| GET | `/edu/advisors/overview` | 总览：学生数、平均 GPA/学分、GPA 分布与趋势、风险与进度分布 | `edu:advisor:view` |
+| GET | `/edu/advisors/students` | 学生列表（分页）。参数：`entryYear`、`majorId`、`riskLevel`、`keyword`、`pageNum`、`pageSize` | `edu:advisor:view` |
+| GET | `/edu/advisors/students/{studentId}` | 单个学生画像：基本信息 + 分类学分 + 学期 GPA 趋势 + 已修课程数 + 风险明细 | `edu:advisor:view` |
+
+### 9.1 风险规则（透明可解释）
+
+风险分由后端规则函数计算，规则与权重集中在
+`com.ruoyi.education.advisor.rule.AdvisorRiskRules`（常量可调，不写死在业务代码里）：
+
+| 规则编码 | 命中条件 | 默认权重 |
+|---|---|---|
+| `GPA_LOW` | `cum_gpa < 2.0`（高危）或 `< 2.5`（警戒） | 1.0 |
+| `CREDIT_BEHIND` | 已修学分 `<` 按入学年推算的应修学分 `× 0.8` | 1.0 |
+| `FAILED_COURSE` | 存在 `passed='0'` 或等级 `F` 的成绩记录 | 1.0 |
+| `NO_RECENT_TERM` | 最近两个“有成绩数据”的学期均无该生成绩记录 | 1.0 |
+
+应修学分口径：`30 学分/学年 × 已完成学年数`，封顶毕业要求 120 学分
+（`edu_curriculum.total_credits` 当前为 0，故用常量兜底）。
+
+总分 = `Σ命中规则权重 / Σ全部规则权重 × 100`，四舍五入取整后分档：
+`>= 60 high`、`>= 30 medium`、否则 `low`。每条命中原因都返回可读 `detail`，
+前端还会拿到 `weight`，按导师在页面上输入的四个权重做展示层重新加权（不再次请求后端）。
+
+**已知限制**：当前库没有 advisor-student（导师-学生）关系表，也没有联系记录表。
+因此本轮 `TEACHER` / `ADMIN` 可以看到**全部**学生：接口不接受前端传入的
+“我是谁”（`teacherId` / `advisorId`），身份只用于 `@PreAuthorize` 的权限校验。
+补齐关系表后，把过滤条件下推到 `EduAdvisorMapper` 即可，本契约不变。
+
+### 9.2 `GET /edu/advisors/overview` 返回示例
+
+```json
+{
+  "code": 200,
+  "msg": "操作成功",
+  "data": {
+    "studentCount": 8,
+    "avgGpa": 3.29,
+    "avgCredits": 102.1,
+    "gpaBuckets": [
+      { "label": "<2.0", "count": 0 },
+      { "label": "2.0-2.5", "count": 0 },
+      { "label": "2.5-3.0", "count": 1 },
+      { "label": "3.0-3.5", "count": 5 },
+      { "label": "3.5-4.0", "count": 2 }
+    ],
+    "gpaTrend": [
+      { "termCode": "2022-23-1", "avgGpa": 3.31 },
+      { "termCode": "2025-26-2", "avgGpa": 3.36 }
+    ],
+    "risk": { "high": 0, "medium": 0, "low": 8 },
+    "progress": { "onTrack": 8, "behind": 0, "unknown": 0 },
+    "categoryBreakdown": [
+      { "category": "Major", "avgCredits": 72.0, "courseCount": 195 },
+      { "category": "GenEd", "avgCredits": 15.0, "courseCount": 40 }
+    ]
+  }
+}
+```
+
+> `categoryBreakdown` 是扩展字段：培养方案暂无“分类要求学分”，因此给出
+> “全体学生该分类平均已修学分 + 修读记录数”，供 Progress Overview 的分类进度条展示。
+
+### 9.3 `GET /edu/advisors/students` 返回示例
+
+```json
+{
+  "code": 200,
+  "msg": "查询成功",
+  "total": 8,
+  "rows": [
+    {
+      "studentId": 1000,
+      "studentNo": "122040156",
+      "name": "CHEN MICHAEL",
+      "majorName": "计算机科学与技术",
+      "entryYear": 2022,
+      "cumGpa": 3.11,
+      "totalCredits": 126.0,
+      "creditProgressPct": 100.0,
+      "avgScore": 41.6,
+      "riskLevel": "low",
+      "riskScore": 0,
+      "riskReasons": []
+    }
+  ]
+}
+```
+
+`riskLevel` 是派生指标：服务层先算出全部学生的风险等级，再按 `riskLevel` 过滤并分页，
+因此 `total` 与过滤后的结果一致（该参数不能直接下推 SQL）。
+
+### 9.4 `GET /edu/advisors/students/{studentId}` 返回示例
+
+```json
+{
+  "code": 200,
+  "msg": "操作成功",
+  "data": {
+    "studentId": 1000,
+    "studentNo": "122040156",
+    "name": "CHEN MICHAEL",
+    "majorId": 1002,
+    "majorName": "计算机科学与技术",
+    "majorCode": "CSE",
+    "entryYear": 2022,
+    "college": "Harmonia College",
+    "cumGpa": 3.11,
+    "totalCredits": 126.0,
+    "graduationCredits": 120.0,
+    "expectedCredits": 120.0,
+    "creditProgressPct": 100.0,
+    "avgScore": 41.6,
+    "completedCourseCount": 44,
+    "failedCourseCount": 0,
+    "latestTermGpa": 3.17,
+    "riskLevel": "low",
+    "riskScore": 0,
+    "riskReasons": [],
+    "categoryCredits": [
+      { "category": "Major", "credits": 91.0, "courseCount": 31 },
+      { "category": "GenEd", "credits": 18.0, "courseCount": 6 }
+    ],
+    "gpaTrend": [
+      { "termCode": "2022-23-1", "avgGpa": 3.17 },
+      { "termCode": "2025-26-2", "avgGpa": 3.17 }
+    ]
+  }
+}
+```
+
+### 9.5 前端页面与接口对照
+
+| 菜单 | 组件 | 依赖接口 |
+|---|---|---|
+| 导师看板 | `views/education/advisor/index.vue` | `/edu/advisors/overview`、`/edu/advisors/students`、`/edu/advisors/students/{id}`、`/edu/majors/list` |
+
+> 联系人/沟通相关区块（Communication Overview、Last Contact）当前没有数据源：
+> 数据库尚无 advisor-student 关系表与联系记录表，页面按空状态展示并给出说明。

@@ -1,5 +1,13 @@
 <template>
   <div class="app-container edu-skill">
+    <!-- 页面标题区 -->
+    <div class="lg-head">
+      <div>
+        <h2>技能画像</h2>
+        <p>依据已修课程聚合技能画像，并在本机自评、记录笔记与备份个人技能数据。</p>
+      </div>
+    </div>
+
     <!-- 隐私与本地存储风险提示（必须始终可见） -->
     <el-alert
       type="warning"
@@ -462,6 +470,7 @@ onBeforeUnmount(() => {
   radarChart = null
 })
 </script>
+
 
 <style scoped lang="scss">
 .edu-skill {

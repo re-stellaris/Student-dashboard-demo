@@ -1,5 +1,13 @@
 <template>
   <div class="app-container edu-dashboard">
+    <!-- 页面标题区（外壳不提供卡片标题，这里沿用原版卡片标题排版） -->
+    <div class="lg-head">
+      <div>
+        <h2>学习仪表盘</h2>
+        <p>学籍概览、学分与 GPA 趋势、选课规划进度与待交作业，一屏掌握。</p>
+      </div>
+    </div>
+
     <!-- 错误状态 -->
     <el-alert v-if="errorMessage" type="error" :closable="false" show-icon class="mb8">
       <template #title>
@@ -400,6 +408,7 @@ onBeforeUnmount(() => {
   categoryChart = null
 })
 </script>
+
 
 <style scoped lang="scss">
 .edu-dashboard {

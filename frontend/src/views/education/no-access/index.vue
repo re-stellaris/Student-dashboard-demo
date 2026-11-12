@@ -1,5 +1,6 @@
 <template>
-  <div class="app-container">
+  <div class="sp-root no-access-page">
+    <div class="app-container">
     <el-result icon="info" :title="title" :sub-title="subTitle">
       <template #extra>
         <div class="no-access">
@@ -28,6 +29,7 @@
         </div>
       </template>
     </el-result>
+  </div>
   </div>
 </template>
 
@@ -79,6 +81,19 @@ function relogin(): void {
 </script>
 
 <style scoped lang="scss">
+.no-access-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.no-access-page .app-container {
+  width: 100%;
+  max-width: 980px;
+  padding: 24px;
+}
+
 .no-access {
   max-width: 760px;
   margin: 0 auto;

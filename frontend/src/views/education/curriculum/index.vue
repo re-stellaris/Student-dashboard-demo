@@ -1,5 +1,13 @@
 <template>
   <div class="app-container">
+    <!-- 页面标题区 -->
+    <div class="lg-head">
+      <div>
+        <h2>培养方案</h2>
+        <p>按专业与入学年份匹配培养方案版本，查看各类课程条目与最低学分要求。</p>
+      </div>
+    </div>
+
     <el-row :gutter="16">
       <!-- 左：专业选择 + 版本列表 -->
       <el-col :xs="24" :md="10" :lg="9">
@@ -545,6 +553,7 @@ function submitItems(): void {
 
 loadMajors()
 </script>
+
 
 <style scoped lang="scss">
 .panel {

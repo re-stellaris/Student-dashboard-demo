@@ -1,5 +1,13 @@
 <template>
   <div class="app-container">
+    <!-- 页面标题区 -->
+    <div class="lg-head">
+      <div>
+        <h2>选课规划</h2>
+        <p>在当前学期挑选课程，校验先修关系与学分上限，校验通过后提交选课规划。</p>
+      </div>
+    </div>
+
     <!-- 顶部：学期 / 规划选择 -->
     <el-card shadow="never" class="mb16">
       <div class="toolbar">
@@ -797,6 +805,7 @@ onMounted(async () => {
   loadRecommendations()
 })
 </script>
+
 
 <style scoped lang="scss">
 .mb16 {
