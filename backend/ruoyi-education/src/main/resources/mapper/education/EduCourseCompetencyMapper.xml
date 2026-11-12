@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.education.analytics.mapper.EduCourseCompetencyMapper">
+
+    <resultMap type="com.ruoyi.education.analytics.domain.EduCourseCompetency" id="EduCourseCompetencyResult">
+        <result property="id"              column="id"               />
+        <result property="courseId"        column="course_id"        />
+        <result property="skillTagId"      column="skill_tag_id"     />
+        <result property="score"           column="score"            />
+        <result property="level"           column="level"            />
+        <result property="rationale"       column="rationale"        />
+        <result property="matchedKeywords" column="matched_keywords" />
+        <result property="courseCode"      column="course_code"      />
+        <result property="courseTitle"     column="course_title"     />
+        <result property="skillCode"       column="skill_code"       />
+        <result property="skillName"       column="skill_name"       />
+        <result property="skillCategory"   column="skill_category"   />
+    </resultMap>
+
+    <resultMap type="com.ruoyi.education.analytics.domain.EduSkillTag" id="EduSkillTagPoolResult">
+        <result property="skillTagId"  column="skill_tag_id" />
+        <result property="code"        column="code"         />
+        <result property="name"        column="name"         />
+        <result property="category"    column="category"     />
+        <result property="schoolAbbr"  column="school_abbr"  />
+        <result property="description" column="description"  />
+        <result property="keywords"    column="keywords"     />
+        <result property="sortOrder"   column="sort_order"   />
+        <result property="status"      column="status"       />
+        <result property="courseCount" column="course_count" />
+        <result property="avgScore"    column="avg_score"    />
+        <result property="createTime"  column="create_time"  />
+    </resultMap>
+
+    <sql id="selectCompetencyVo">
+        select cc.id, cc.course_id, cc.skill_tag_id, cc.score, cc.level, cc.rationale, cc.matched_keywords,
+               c.code as course_code, c.title_zh as course_title,
+               t.code as skill_code, t.name as skill_name, t.category as skill_category
+        from edu_course_competency cc
+        inner join edu_skill_tag t on t.skill_tag_id = cc.skill_tag_id
+        left join edu_course c on c.course_id = cc.course_id
+    </sql>
+
+    <select id="selectByCourseId" parameterType="Long" resultMap="EduCourseCompetencyResult">
+        <include refid="selectCompetencyVo"/>
+        where cc.course_id = #{courseId}
+          and t.del_flag = '0'
+        order by cc.score desc, t.sort_order asc
+    </select>
+
+    <select id="selectByStudentPassedCourses" parameterType="Long" resultMap="EduCourseCompetencyResult">
+        <include refid="selectCompetencyVo"/>
+        inner join edu_course_record r on r.course_id = cc.course_id
+        where r.student_id = #{studentId}
+          and r.passed = '1'
+          and r.record_status = 'COMPLETED'
+          and r.del_flag = '0'
+          and t.del_flag = '0'
+        group by cc.id
+        order by t.category asc, cc.score desc
+    </select>
+
+    <select id="selectPoolBySchool" resultMap="EduSkillTagPoolResult">
+        select t.skill_tag_id, t.code, t.name, t.category, t.school_abbr, t.description, t.keywords,
+               t.sort_order, t.status, t.create_time,
+               count(distinct cc.course_id) as course_count,
+               round(avg(cc.score), 1) as avg_score
+        from edu_skill_tag t
+        left join edu_course_competency cc on cc.skill_tag_id = t.skill_tag_id
+        where t.del_flag = '0'
+          and t.status = '0'
+          <if test="schoolAbbr != null and schoolAbbr != ''">
+              and t.school_abbr = #{schoolAbbr}
+          </if>
+          <if test="keyword != null and keyword != ''">
+              and (t.name like concat('%', #{keyword}, '%')
+                   or t.code like concat('%', #{keyword}, '%')
+                   or t.keywords like concat('%', #{keyword}, '%')
+                   or t.description like concat('%', #{keyword}, '%'))
+          </if>
+        group by t.skill_tag_id
+        order by t.sort_order asc, t.skill_tag_id asc
+    </select>
+
+</mapper>

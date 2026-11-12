@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.education.curriculum.mapper.EduMajorMapper">
+
+    <resultMap type="com.ruoyi.education.curriculum.domain.EduMajor" id="EduMajorResult">
+        <result property="majorId"       column="major_id"        />
+        <result property="majorCode"     column="major_code"      />
+        <result property="majorNameZh"   column="major_name_zh"   />
+        <result property="majorNameEn"   column="major_name_en"   />
+        <result property="schoolAbbr"    column="school_abbr"     />
+        <result property="schoolName"    column="school_name"     />
+        <result property="degreeType"    column="degree_type"     />
+        <result property="durationYears" column="duration_years"  />
+        <result property="status"        column="status"          />
+        <result property="delFlag"       column="del_flag"        />
+        <result property="createBy"      column="create_by"       />
+        <result property="createTime"    column="create_time"     />
+        <result property="updateBy"      column="update_by"       />
+        <result property="updateTime"    column="update_time"     />
+        <result property="remark"        column="remark"          />
+    </resultMap>
+
+    <sql id="selectMajorVo">
+        select major_id, major_code, major_name_zh, major_name_en, school_abbr, school_name, degree_type,
+               duration_years, status, del_flag, create_by, create_time, update_by, update_time, remark
+        from edu_major
+    </sql>
+
+    <select id="selectMajorList" parameterType="com.ruoyi.education.curriculum.domain.EduMajor" resultMap="EduMajorResult">
+        <include refid="selectMajorVo"/>
+        <where>
+            del_flag = '0'
+            <if test="majorCode != null and majorCode != ''">
+                AND major_code like concat('%', #{majorCode}, '%')
+            </if>
+            <if test="majorNameZh != null and majorNameZh != ''">
+                AND major_name_zh like concat('%', #{majorNameZh}, '%')
+            </if>
+            <if test="majorNameEn != null and majorNameEn != ''">
+                AND major_name_en like concat('%', #{majorNameEn}, '%')
+            </if>
+            <if test="schoolAbbr != null and schoolAbbr != ''">
+                AND school_abbr = #{schoolAbbr}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+        </where>
+        order by major_code
+    </select>
+
+    <select id="selectMajorById" parameterType="java.lang.Long" resultMap="EduMajorResult">
+        <include refid="selectMajorVo"/>
+        where major_id = #{majorId} and del_flag = '0'
+    </select>
+
+    <select id="countMajorByCode" parameterType="java.lang.String" resultType="java.lang.Integer">
+        select count(1) from edu_major where major_code = #{majorCode} and del_flag = '0'
+    </select>
+
+</mapper>

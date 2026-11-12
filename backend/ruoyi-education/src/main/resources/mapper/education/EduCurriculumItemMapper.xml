@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.education.curriculum.mapper.EduCurriculumItemMapper">
+
+    <resultMap type="com.ruoyi.education.curriculum.domain.EduCurriculumItem" id="EduCurriculumItemResult">
+        <result property="itemId"          column="item_id"          />
+        <result property="curriculumId"    column="curriculum_id"    />
+        <result property="courseId"        column="course_id"        />
+        <result property="courseCode"      column="course_code"      />
+        <result property="requirementType" column="requirement_type" />
+        <result property="section"         column="section"          />
+        <result property="stream"          column="stream"           />
+        <result property="minUnits"        column="min_units"        />
+        <result property="sortOrder"       column="sort_order"       />
+        <result property="courseTitle"     column="course_title"     />
+        <result property="courseUnits"     column="course_units"     />
+        <result property="createBy"        column="create_by"        />
+        <result property="createTime"      column="create_time"      />
+    </resultMap>
+
+    <select id="selectItemsByCurriculumId" parameterType="java.lang.Long" resultMap="EduCurriculumItemResult">
+        select i.item_id, i.curriculum_id, i.course_id,
+               coalesce(nullif(i.course_code, ''), c.code) as course_code,
+               i.requirement_type, i.section, i.stream, i.min_units, i.sort_order,
+               i.create_by, i.create_time,
+               coalesce(nullif(c.title_zh, ''), c.title_en) as course_title,
+               c.credits as course_units
+        from edu_curriculum_item i
+        left join edu_course c on c.course_id = i.course_id
+        where i.curriculum_id = #{curriculumId}
+        order by i.sort_order, i.item_id
+    </select>
+
+    <insert id="insertItemBatch">
+        insert into edu_curriculum_item (curriculum_id, course_id, course_code, requirement_type, section, stream,
+                                         min_units, sort_order, create_by, create_time)
+        values
+        <foreach item="item" collection="items" separator=",">
+            (#{item.curriculumId}, #{item.courseId}, #{item.courseCode}, #{item.requirementType}, #{item.section},
+             #{item.stream}, #{item.minUnits}, #{item.sortOrder}, #{item.createBy}, sysdate())
+        </foreach>
+    </insert>
+
+    <delete id="deleteItemsByCurriculumId" parameterType="java.lang.Long">
+        delete from edu_curriculum_item where curriculum_id = #{curriculumId}
+    </delete>
+
+    <select id="countItemsByCurriculumId" parameterType="java.lang.Long" resultType="java.lang.Integer">
+        select count(1) from edu_curriculum_item where curriculum_id = #{curriculumId}
+    </select>
+
+</mapper>

@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.education.assignment.mapper.EduAssignmentMapper">
+
+    <resultMap type="com.ruoyi.education.assignment.domain.EduAssignment" id="EduAssignmentResult">
+        <result property="assignmentId" column="assignment_id" />
+        <result property="offeringId"   column="offering_id"   />
+        <result property="title"        column="title"         />
+        <result property="description"  column="description"   />
+        <result property="dueAt"        column="due_at"        />
+        <result property="totalScore"   column="total_score"   />
+        <result property="status"       column="status"        />
+        <result property="courseCode"   column="course_code"   />
+        <result property="courseTitle"  column="course_title"  />
+        <result property="termCode"     column="term_code"     />
+        <result property="createBy"     column="create_by"     />
+        <result property="createTime"   column="create_time"   />
+        <result property="updateBy"     column="update_by"     />
+        <result property="updateTime"   column="update_time"   />
+    </resultMap>
+
+    <sql id="selectAssignmentVo">
+        select a.assignment_id, a.offering_id, a.title, a.description, a.due_at, a.total_score, a.status,
+               a.create_by, a.create_time, a.update_by, a.update_time,
+               c.code as course_code, c.title_zh as course_title, t.term_code
+        from edu_assignment a
+        left join edu_course_offering o on o.offering_id = a.offering_id
+        left join edu_course c on c.course_id = o.course_id
+        left join edu_term t on t.term_id = o.term_id
+    </sql>
+
+    <select id="selectAssignmentList" parameterType="com.ruoyi.education.assignment.domain.EduAssignment" resultMap="EduAssignmentResult">
+        <include refid="selectAssignmentVo"/>
+        <where>
+            a.del_flag = '0'
+            <if test="offeringId != null">
+                and a.offering_id = #{offeringId}
+            </if>
+            <if test="status != null and status != ''">
+                and a.status = #{status}
+            </if>
+            <if test="title != null and title != ''">
+                and a.title like concat('%', #{title}, '%')
+            </if>
+        </where>
+        order by a.due_at desc, a.assignment_id desc
+    </select>
+
+    <select id="selectAssignmentListByTeacherId" parameterType="Long" resultMap="EduAssignmentResult">
+        <include refid="selectAssignmentVo"/>
+        where a.del_flag = '0'
+          and o.teacher_id = #{teacherId}
+        order by a.due_at desc, a.assignment_id desc
+    </select>
+
+    <select id="selectAssignmentListByStudentId" resultMap="EduAssignmentResult">
+        <include refid="selectAssignmentVo"/>
+        inner join edu_enrollment e on e.offering_id = a.offering_id
+        where a.del_flag = '0'
+          and e.student_id = #{studentId}
+          and e.status in ('ENROLLED', 'COMPLETED')
+          and a.status &lt;&gt; 'DRAFT'
+          <if test="offeringId != null">
+              and a.offering_id = #{offeringId}
+          </if>
+        order by a.due_at desc, a.assignment_id desc
+    </select>
+
+    <select id="selectAssignmentById" parameterType="Long" resultMap="EduAssignmentResult">
+        <include refid="selectAssignmentVo"/>
+        where a.del_flag = '0' and a.assignment_id = #{assignmentId}
+    </select>
+
+    <select id="countByOfferingId" resultType="int">
+        select count(1) from edu_assignment
+        where offering_id = #{offeringId} and del_flag = '0'
+    </select>
+
+    <insert id="insertAssignment" parameterType="com.ruoyi.education.assignment.domain.EduAssignment" useGeneratedKeys="true" keyProperty="assignmentId">
+        insert into edu_assignment (
+            offering_id,
+            title,
+            <if test="description != null">description, </if>
+            <if test="dueAt != null">due_at, </if>
+            <if test="totalScore != null">total_score, </if>
+            <if test="status != null and status != ''">status, </if>
+            <if test="createBy != null and createBy != ''">create_by, </if>
+            create_time
+        ) values (
+            #{offeringId},
+            #{title},
+            <if test="description != null">#{description}, </if>
+            <if test="dueAt != null">#{dueAt}, </if>
+            <if test="totalScore != null">#{totalScore}, </if>
+            <if test="status != null and status != ''">#{status}, </if>
+            <if test="createBy != null and createBy != ''">#{createBy}, </if>
+            sysdate()
+        )
+    </insert>
+
+    <update id="updateAssignment" parameterType="com.ruoyi.education.assignment.domain.EduAssignment">
+        update edu_assignment
+        <set>
+            <if test="offeringId != null">offering_id = #{offeringId}, </if>
+            <if test="title != null and title != ''">title = #{title}, </if>
+            <if test="description != null">description = #{description}, </if>
+            <if test="dueAt != null">due_at = #{dueAt}, </if>
+            <if test="totalScore != null">total_score = #{totalScore}, </if>
+            <if test="status != null and status != ''">status = #{status}, </if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy}, </if>
+            update_time = sysdate()
+        </set>
+        where assignment_id = #{assignmentId}
+    </update>
+
+    <update id="deleteAssignmentByIds" parameterType="Long">
+        update edu_assignment set del_flag = '2' where assignment_id in
+        <foreach item="assignmentId" collection="array" open="(" separator="," close=")">
+            #{assignmentId}
+        </foreach>
+    </update>
+
+</mapper>

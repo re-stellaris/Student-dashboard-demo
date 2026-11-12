@@ -1,7 +1,0 @@
-/api/* https://student-dashboard-demo.onrender.com/api/:splat 200
-/aa /aa_dashboard_v2.html 200
-/aa-dashboard /aa_dashboard_v2.html 200
-/ /students-interface/student_dashboard_index.html 302
-/index.html /students-interface/student_dashboard_index.html 302
-/students-interface/* /students-interface/:splat 200
-/* /index.html 200
