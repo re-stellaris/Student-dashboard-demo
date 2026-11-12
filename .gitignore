@@ -5,6 +5,9 @@ frontend/dist/
 backend/**/target/
 *.tsbuildinfo
 .npm-cache/
+# 本地开发用的临时工具链（Maven / 便携 Redis / 本地日志），不入库
+.tools/
+.local/
 
 # Python
 __pycache__/
