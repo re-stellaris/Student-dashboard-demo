@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.education.transcript.mapper.EduTranscriptMapper">
+
+    <!-- 学期代码 → 学期ID（edu_term 无 del_flag，直接按代码匹配） -->
+    <select id="selectTermRefs" resultType="com.ruoyi.education.transcript.domain.TranscriptTermRef">
+        select t.term_id   as termId,
+               t.term_code as termCode
+        from edu_term t
+        where t.term_code in
+        <foreach item="termCode" collection="termCodes" open="(" separator="," close=")">
+            #{termCode}
+        </foreach>
+    </select>
+
+    <!-- 课程代码 → 课程目录快照；logical delete 的课程视为未命中 -->
+    <select id="selectCourseRefs" resultType="com.ruoyi.education.transcript.domain.TranscriptCourseRef">
+        select c.course_id as courseId,
+               c.code      as courseCode,
+               c.title_zh  as title,
+               c.credits   as credits,
+               c.category  as category
+        from edu_course c
+        where c.del_flag = '0'
+          and c.code in
+        <foreach item="courseCode" collection="courseCodes" open="(" separator="," close=")">
+            #{courseCode}
+        </foreach>
+    </select>
+
+    <!-- 已存在成绩记录；不过滤 del_flag，避免唯一键 uk_record_student_course_term 冲突 -->
+    <select id="selectRecordRefs" resultType="com.ruoyi.education.transcript.domain.TranscriptRecordRef">
+        select r.record_id   as recordId,
+               r.course_code as courseCode,
+               r.term_id     as termId,
+               r.source      as source
+        from edu_course_record r
+        where r.student_id = #{studentId}
+          and r.course_code in
+        <foreach item="courseCode" collection="courseCodes" open="(" separator="," close=")">
+            #{courseCode}
+        </foreach>
+    </select>
+
+    <insert id="insertTranscriptRecord" parameterType="com.ruoyi.education.enrollment.domain.EduCourseRecord"
+            useGeneratedKeys="true" keyProperty="recordId">
+        insert into edu_course_record (
+            student_id,
+            course_id,
+            course_code,
+            course_title,
+            term_id,
+            grade,
+            score,
+            units,
+            category,
+            passed,
+            record_status,
+            source,
+            del_flag,
+            create_by,
+            create_time
+        ) values (
+            #{studentId},
+            #{courseId},
+            #{courseCode},
+            #{courseTitle},
+            #{termId},
+            #{grade},
+            #{score},
+            #{units},
+            #{category},
+            #{passed},
+            #{recordStatus},
+            #{source},
+            '0',
+            #{createBy},
+            sysdate()
+        )
+    </insert>
+
+    <update id="updateTranscriptRecord" parameterType="com.ruoyi.education.enrollment.domain.EduCourseRecord">
+        update edu_course_record
+        set course_id     = #{courseId},
+            course_title   = #{courseTitle},
+            grade          = #{grade},
+            score          = #{score},
+            units          = #{units},
+            category       = #{category},
+            passed         = #{passed},
+            record_status  = #{recordStatus},
+            source         = #{source},
+            del_flag       = '0',
+            update_by      = #{updateBy},
+            update_time    = sysdate()
+        where record_id = #{recordId}
+    </update>
+
+    <update id="updateStudentSummary">
+        update edu_student
+        set total_credits = #{totalCredits},
+            cum_gpa       = #{cumGpa},
+            update_by     = #{updateBy},
+            update_time   = sysdate()
+        where student_id = #{studentId}
+    </update>
+
+</mapper>

@@ -4,6 +4,7 @@
     <nav class="topnav">
       <span class="logo">Study Dashboard</span>
       <router-link to="/student">← {{ t('back') }}</router-link>
+      <router-link class="nav-link" to="/student/transcript">📄 <span>成绩单上传</span></router-link>
       <div class="lang-toggle area-toggle" role="tablist" :aria-label="t('areaSwitch')">
         <button
           v-for="item in areaOptions"

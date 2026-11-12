@@ -37,6 +37,7 @@
 | [`adr/ADR-0007-monorepo-layout.md`](adr/ADR-0007-monorepo-layout.md) | 为什么 `backend/` + `frontend/` + `data/` + `pipeline/` + `deploy/` + `docs/` 同仓；离线 ETL 为什么不是运行时模块 | 全体 | 已接受 |
 | [`adr/ADR-0008-student-portal-preserves-legacy-design.md`](adr/ADR-0008-student-portal-preserves-legacy-design.md) | 学生端（`/student/**`）保留旧版 HTML 设计、管理端（`/education/**`）用若依表格界面；CSS 用 `.sp-root` 隔离；数据与鉴权换源 | 前端、产品 | 已接受 |
 | [`adr/ADR-0009-education-pages-legacy-shell.md`](adr/ADR-0009-education-pages-legacy-shell.md) | 教育平台页面脱离若依 Layout，改用 `LegacyShell` 旧版顶栏外壳；保留菜单驱动与按钮权限；新增页面的登记要求 | 前端、产品 | 已接受 |
+| [`adr/ADR-0010-transcript-self-import-boundary.md`](adr/ADR-0010-transcript-self-import-boundary.md) | 学生可导入自填成绩单，但写入恒为 `source='TRANSCRIPT_UPLOAD'` 且不覆盖官方记录；PDF/OCR 明确不做 | 后端、产品 | 已接受 |
 | [`migration-map.md`](migration-map.md) | 旧→新文件映射、分支策略、能力对照表、尚未完成项 | 全体 | 迁移期有效 |
 | [`risks.md`](risks.md) | 方案 ch.10 的风险登记册 + 本仓库已有的具体缓解措施落点 | 技术负责人、产品 | 随迭代更新 |
 

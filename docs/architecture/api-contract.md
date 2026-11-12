@@ -305,3 +305,66 @@
 
 > 联系人/沟通相关区块（Communication Overview、Last Contact）当前没有数据源：
 > 数据库尚无 advisor-student 关系表与联系记录表，页面按空状态展示并给出说明。
+
+## 10. 成绩单上传（transcript）
+
+> 页面：`/student/transcript`（学生端常量路由）。设计沿用旧版
+> `login+guidance+transcript_v8.html` 的 dropzone + 解析预览 + 确认导入。
+
+| 方法 | 路径 | 说明 | 权限 |
+|---|---|---|---|
+| POST | `/edu/transcripts/import` | 导入前端解析出的成绩单行 | `edu:transcript:upload`（仅 STUDENT） |
+
+### 10.1 请求体
+
+```json
+{
+  "fileName": "transcript.xlsx",
+  "rows": [
+    { "courseCode": "CSC3100", "courseTitle": "数据结构", "termCode": "2023-24-1",
+      "units": 3.0, "grade": "A-", "score": 45.7, "category": "Major",
+      "passed": true, "status": "Completed" }
+  ]
+}
+```
+
+### 10.2 响应
+
+```json
+{
+  "code": 200,
+  "data": {
+    "rowCount": 44, "inserted": 40, "updated": 3, "skipped": 1,
+    "unknownCourses": ["MIS23012"], "unknownTerms": [],
+    "skippedDetails": [
+      { "courseCode": "CSC1001", "termCode": "2022-23-1", "reason": "已存在官方记录，未覆盖" }
+    ]
+  }
+}
+```
+
+`rows` 上限 **500** 行，超出直接拒绝（防误传整库）。
+
+### 10.3 后端规则（必须实现）
+
+1. 身份只取 JWT → `edu_student.sys_user_id`；未绑定抛「当前账号未绑定学生学籍」；
+   **不接受前端传 `studentId`**（与 §0 一致）。
+2. `termCode` 必须命中 `edu_term.term_code`，否则该行跳过并计入 `unknownTerms`。
+3. `courseCode` 未命中 `edu_course.code`：允许插入（`course_id = null`，保留
+   `course_code` / `course_title` 快照），并计入 `unknownCourses`。
+4. 同一 `(student_id, course_code, term_id)` 已存在时：
+   - 原记录 `source = 'TRANSCRIPT_UPLOAD'` → **更新**；
+   - 否则（`SIS_IMPORT` / `DEMO` / 手工录入）→ **不覆盖**，计入 `skipped` 并给出中文原因。
+5. 写入的 `source` 恒为 `TRANSCRIPT_UPLOAD`，与官方数据可区分。
+6. 导入后重算该生 `edu_student.total_credits` 与 `cum_gpa`
+   （只统计 `passed='1'` 且 `record_status='COMPLETED'`）。
+7. **幂等**：同一文件重复导入应表现为 `updated`，不能重复 `inserted`。
+
+### 10.4 前端行为
+
+- 支持 `.xlsx` / `.xls` / `.csv`（SheetJS 解析）。
+- **PDF 不在本轮范围**：旧版用 pdf.js + Tesseract OCR，依赖过重；选到 PDF 时给出明确提示，
+  不静默失败。
+- 解析后展示：姓名 / 学号 / 专业（识别不到显示「未识别」）、课程行表格（可删行）。
+- 确认导入后展示 `inserted / updated / skipped` 与未知课程代码清单，
+  并明确提示「导入的是自填数据，不会覆盖官方成绩」。

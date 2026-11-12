@@ -12,6 +12,7 @@
 | `/student/course/:code` | `views/student/course-detail/index.vue` | 课程详情（含先修分组与评论区） | 登录即可 |
 | `/student/ge/:area` | `views/student/ge-area/index.vue` | 通识教育 B/C/D 区 | 登录即可 |
 | `/student/guide` | `views/student/guide/index.vue` | 使用指南 | 登录即可 |
+| `/student/transcript` | `views/student/transcript/index.vue` | 成绩单上传（自填导入） | STUDENT |
 | `/no-access` | `views/education/no-access/index.vue` | 角色不匹配提示页 | 登录即可 |
 
 登录后按角色落地（`permission.ts`）：**STUDENT → `/student`**、TEACHER → `/education/teaching`、admin → 若依控制台首页。
@@ -131,3 +132,37 @@ Start-Process "http://127.0.0.1/"
 ```
 
 管理员用 `admin / admin123` 访问 `/student` 会被拦到 `/no-access`（学生端是「本人数据」页）。
+
+## 6. 成绩单上传页（`/student/transcript`）
+
+沿用旧版 `login+guidance+transcript_v8.html` 的 dropzone + 解析预览 + 确认导入。
+决策与数据边界见 [`architecture/adr/ADR-0010-transcript-self-import-boundary.md`](architecture/adr/ADR-0010-transcript-self-import-boundary.md)。
+
+| 项 | 实现 |
+|---|---|
+| 页面 | `views/student/transcript/index.vue`（1145 行，`.sp-root` + `transcript.css`） |
+| 解析器 | `utils/transcript/parseTranscript.ts`（434 行，**纯函数**，无 DOM） |
+| 接口 | `POST /edu/transcripts/import`（契约 §10，权限 `edu:transcript:upload`，仅 STUDENT） |
+| 依赖 | `xlsx@0.18.5`（SheetJS，仅打进该路由 chunk） |
+| 后端 | `com.ruoyi.education.transcript`（17 个文件 + 11 条单测） |
+
+**支持的格式**：`.xlsx` / `.xls` / `.csv`。
+**PDF 不支持**：旧版走 pdf.js + Tesseract OCR，依赖过重且识别不稳定；选到 PDF 会明确提示，不静默失败。
+
+**解析器实测**（`data/demo/student_demo_data.xlsx` 的 `CHEN MIC` sheet）：
+
+- 学号 `122040156`、姓名 `CHEN MICHAEL`、专业 Computer Science and Engineering 全部识别
+- **44 条成绩行**（第 12–55 行；`SEMESTER SUMMARY` 等汇总行被自动跳过）
+- 学期归一化：`2022-23 Term 1 → 2022-23-1`、`Term 2 → -2`、`Summer → -3`，
+  另支持 `F23/S24/SUM24` 短码；无法识别时保留原文并给 warning
+- 表头自动定位（不假设固定行号），识别不到成绩表时给可读错误
+
+**导入行为**（已端到端实测）：
+
+1. 首次导入 → `inserted=2`，未知课程进 `unknownCourses` 且 `course_id` 为 NULL（保留代码/名称快照）
+2. 重复导入同一批 → `updated=2, inserted=0`（**幂等**）
+3. 已存在且来源非 `TRANSCRIPT_UPLOAD` 的记录 → **不覆盖**，`skippedDetails` 给出「已存在官方记录，未覆盖」
+4. 导入后自动回算 `edu_student.total_credits` 与 `cum_gpa`（实测 126→131 / 3.11→3.14）
+5. 页面上有两处显著提示：**「导入的是你自己上传的自填数据，不会覆盖官方成绩」**
+
+**导航**：学生端 4 个页面的顶栏都加了「成绩单上传」入口（dashboard / course-detail / ge-area / guide）。

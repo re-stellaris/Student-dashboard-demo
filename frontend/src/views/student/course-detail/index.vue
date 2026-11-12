@@ -4,6 +4,7 @@
     <nav class="topnav">
       <span class="logo">📖 {{ t('pageTitle') }}</span>
       <router-link to="/student">{{ t('back') }}</router-link>
+      <router-link class="nav-link" to="/student/transcript">📄 <span>成绩单上传</span></router-link>
       <div class="nav-spacer"></div>
       <div class="lang-toggle">
         <button

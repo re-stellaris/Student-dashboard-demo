@@ -64,6 +64,12 @@ export const constantRoutes = [
     meta: { title: '使用指南' }
   },
   {
+    path: '/student/transcript',
+    component: () => import('@/views/student/transcript/index.vue'),
+    hidden: true,
+    meta: { title: '成绩单上传' }
+  },
+  {
     // 教育平台的角色不匹配提示页（管理员/教师误入学生本人数据页时跳到这里）。
     // 必须放在常量路由里：它不出现在后端菜单中，否则动态路由无法命中。
     // 独立页面（不进若依 Layout），与旧版风格保持一致。
