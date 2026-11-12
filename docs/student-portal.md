@@ -85,16 +85,35 @@ SFC 里用 `<style scoped src="../../assets/student/<page>.css"></style>` 引用
 | 登录页文案 | "Continue with CUHK SSO" | "登录 / Sign in" | SSO 未接入，不能误导 |
 | 隐私条 | "Nothing is ever uploaded" | 区分「学业数据经后端鉴权」与「个人画像仅存本机」 | 新架构下旧文案不成立 |
 
-### 4.4 一个需要产品决策的权限问题
+### 4.4 学院能力池的权限处理（已决策：对学生隐藏）
 
 `GET /edu/analytics/competency-pool` 需要 `edu:analytics:view`，而 **STUDENT 角色没有该权限**
 （`backend/sql/edu/V2__edu_permissions.sql` 只授予了 TEACHER）。
-结果：学生能看到技能画像 chips（`/skill-profile` 无需该权限），但点开能力池明细会 403。
 
-建议二选一：
+**决策（2026-11-13）：保持权限模型不变，前端对该角色隐藏整个区块。**
+实现是**权限驱动**的，不是写死角色：
 
-1. 给 STUDENT 授予 `edu:analytics:view`（放开学院能力池查询，符合"学生也能探索学院能力"的产品意图）；
-2. 保持现状，前端把该区块对 STUDENT 隐藏（当前是显示"无权限"提示）。
+```ts
+// views/student/dashboard/index.vue
+const canViewCompetencyPool = computed<boolean>(
+  () => userStore.permissions.includes('edu:analytics:view')
+)
+```
+
+- 无权限时 `<div id="section-competency-pool">` 不渲染；
+- `loadCompetencyPool()` 在无权限时**直接返回，不发起请求**（否则每次进页面都会吃一个 403）；
+- 因此学生端不再出现"无权限"提示条，技能画像/评分条等其余板块照常显示。
+
+**副作用（需要知道）**：`/student` 本身只允许 STUDENT 访问（见 §1 的角色网关），
+所以这个区块**当前不会对任何人渲染**。这是"隐藏"决策的必然结果，不是 bug。
+
+**若将来要放开**：只需给 STUDENT 授予 `edu:analytics:view`（一条 SQL），
+前端无需改代码，区块会自动重新出现：
+
+```sql
+-- 放开学生查看学院能力池（可选）
+INSERT INTO sys_role_menu (role_id, menu_id) VALUES (3, 2080);
+```
 
 ## 5. 本地验收
 

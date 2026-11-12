@@ -497,7 +497,8 @@
           </div>
 
           <!-- ── School Competency Pool ── -->
-          <div id="section-competency-pool" class="card">
+          <!-- 学院能力池需要 edu:analytics:view；学生角色无该权限，按产品决定整块隐藏（见 docs/student-portal.md §4.4） -->
+          <div v-if="canViewCompetencyPool" id="section-competency-pool" class="card">
             <div class="card-head">
               <div>
                 <h2>{{ t('competency.title') }}</h2>
@@ -1161,6 +1162,16 @@ function setLang(next: Lang): void {
  * ===================================================================== */
 const router = useRouter()
 const userStore = useUserStore()
+
+/**
+ * 是否渲染「学院能力池」区块。
+ * /edu/analytics/competency-pool 需要 edu:analytics:view，该权限只授予 TEACHER；
+ * 学生端（本页）默认无权限，按产品决策隐藏整块，且不再发起必然 403 的请求。
+ * admin 与教师拥有该权限，若将来放开学生访问，只需给角色补权限即可自动显示。
+ */
+const canViewCompetencyPool = computed<boolean>(
+  () => userStore.permissions.includes('edu:analytics:view')
+)
 
 const loading = ref<boolean>(false)
 const unbound = ref<boolean>(false)
@@ -2495,6 +2506,10 @@ async function loadSkillProfile(): Promise<void> {
 }
 
 async function loadCompetencyPool(keyword: string): Promise<void> {
+  // 无权限时不发请求（后端会返回 403，且该区块已隐藏）
+  if (!canViewCompetencyPool.value) {
+    return
+  }
   poolLoading.value = true
   poolError.value = ''
   poolRows.value = []
