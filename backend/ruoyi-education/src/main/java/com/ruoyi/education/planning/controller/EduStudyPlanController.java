@@ -48,7 +48,7 @@ public class EduStudyPlanController extends BaseController
     @GetMapping("/list")
     public TableDataInfo list(EduStudyPlan query)
     {
-        startPage();
+        // 分页在 service 内部完成：必须先解析当前学生再分页（原因同上）。
         List<EduStudyPlan> list = planningService.selectPlanList(query);
         return getDataTable(list);
     }

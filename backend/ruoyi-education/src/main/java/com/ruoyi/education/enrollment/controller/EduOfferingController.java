@@ -49,7 +49,8 @@ public class EduOfferingController extends BaseController
     @GetMapping("/mine")
     public TableDataInfo mine()
     {
-        startPage();
+        // 分页在 service 内部完成：必须先解析教师身份再分页，
+        // 否则 PageHelper 会把 LIMIT 拼到 selectTeacherBySysUserId 的 limit 1 后面导致 SQL 语法错误。
         List<EduCourseOffering> list = enrollmentService.selectMyOfferings();
         return getDataTable(list);
     }

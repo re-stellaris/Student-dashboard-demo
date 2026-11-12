@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.PageUtils;
 import com.ruoyi.education.common.PrerequisiteGraph;
 import com.ruoyi.education.enrollment.domain.EduCourseOffering;
 import com.ruoyi.education.enrollment.domain.EduCourseRecord;
@@ -131,6 +132,8 @@ public class EduEnrollmentServiceImpl implements IEduEnrollmentService
     public List<EduCourseOffering> selectMyOfferings()
     {
         EduTeacher teacher = identityResolver.currentTeacher();
+        // 分页必须紧贴列表查询：前面的身份查询会吃掉 PageHelper 的 LIMIT
+        PageUtils.startPage();
         return offeringMapper.selectOfferingByTeacherId(teacher.getTeacherId());
     }
 
@@ -297,6 +300,8 @@ public class EduEnrollmentServiceImpl implements IEduEnrollmentService
         EduCourseRecord condition = query == null ? new EduCourseRecord() : query;
         // 身份锚点由服务端强制写入，忽略前端传入的 studentId
         condition.setStudentId(student.getStudentId());
+        // 分页必须紧贴列表查询
+        PageUtils.startPage();
         return recordMapper.selectRecordList(condition);
     }
 

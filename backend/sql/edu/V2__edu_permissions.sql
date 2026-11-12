@@ -20,9 +20,9 @@ SET NAMES utf8mb4;
 -- 1. 学院部门
 -- ---------------------------------------------------------------------
 insert into sys_dept (dept_id, parent_id, ancestors, dept_name, order_num, leader, phone, email, status, del_flag, create_by, create_time, update_by, update_time)
-values (110, 100, '0,100', '数据科学学院', 10, 'SDS', '0755-84273000', 'sds@example.edu.cn', '0', '0', 'admin', sysdate(), '', null);
+values (110, 100, '0,100', '数据科学学院', 10, 'SDS', '84273000', 'sds@example.edu.cn', '0', '0', 'admin', sysdate(), '', null);
 insert into sys_dept (dept_id, parent_id, ancestors, dept_name, order_num, leader, phone, email, status, del_flag, create_by, create_time, update_by, update_time)
-values (111, 100, '0,100', '经管学院', 11, 'SME', '0755-84273001', 'sme@example.edu.cn', '0', '0', 'admin', sysdate(), '', null);
+values (111, 100, '0,100', '经管学院', 11, 'SME', '84273001', 'sme@example.edu.cn', '0', '0', 'admin', sysdate(), '', null);
 
 -- ---------------------------------------------------------------------
 -- 2. 角色

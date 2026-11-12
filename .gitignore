@@ -27,3 +27,4 @@ deploy/.env
 .idea/
 .wrangler/
 .dev.vars
+frontend/.build-tmp/

@@ -51,7 +51,7 @@ public class EduStudentController extends BaseController
     @GetMapping("/me/records")
     public TableDataInfo records(EduCourseRecord query)
     {
-        startPage();
+        // 分页在 service 内部完成：必须先解析当前学生再分页（原因同上）。
         List<EduCourseRecord> list = enrollmentService.selectMyRecords(query);
         return getDataTable(list);
     }

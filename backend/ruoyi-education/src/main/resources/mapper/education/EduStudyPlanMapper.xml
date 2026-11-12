@@ -19,7 +19,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="createTime"      column="create_time"      />
         <result property="updateBy"        column="update_by"        />
         <result property="updateTime"      column="update_time"      />
-        <result property="remark"          column="remark"           />
         <result property="termCode"        column="term_code"        />
         <result property="termName"        column="term_name"        />
         <result property="studentNo"       column="student_no"       />
@@ -29,7 +28,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <sql id="selectPlanVo">
         select p.plan_id, p.student_id, p.term_id, p.title, p.status, p.total_units, p.unit_limit,
                p.validation_state, p.validation_note, p.del_flag, p.create_by, p.create_time,
-               p.update_by, p.update_time, p.remark,
+               p.update_by, p.update_time,
                t.term_code, t.term_name, s.student_no, s.name as student_name
         from edu_study_plan p
         left join edu_term t on t.term_id = p.term_id
@@ -107,7 +106,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="unitLimit != null">unit_limit = #{unitLimit},</if>
             <if test="validationState != null">validation_state = #{validationState},</if>
             <if test="validationNote != null">validation_note = #{validationNote},</if>
-            <if test="remark != null">remark = #{remark},</if>
             <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
             update_time = sysdate()
         </set>

@@ -99,6 +99,8 @@ public class EduPlanningServiceImpl implements IEduPlanningService
         EduStudyPlan condition = query == null ? new EduStudyPlan() : query;
         // 身份只取自登录态，忽略前端可能传入的 studentId
         condition.setStudentId(studentId);
+        // 分页必须紧贴列表查询
+        com.ruoyi.common.utils.PageUtils.startPage();
         return planMapper.selectPlanList(condition);
     }
 

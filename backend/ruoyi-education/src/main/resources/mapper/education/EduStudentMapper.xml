@@ -107,6 +107,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                sum(coalesce(ci.min_units, 0)) as units
         from edu_curriculum_item ci
         where ci.curriculum_id = #{curriculumId}
+          <!-- 选修池（ELECTIVE）的每一行只是候选课程，min_units 是单课学分而不是要求学分，
+               累加会得出"要求 166 学分"这种误导性数字，因此不计入要求汇总。
+               选修池的最低学分口径待培养方案数据补齐后再单独建模。 -->
+          and ci.requirement_type != 'ELECTIVE'
         group by ci.requirement_type
         order by ci.requirement_type asc
     </select>
