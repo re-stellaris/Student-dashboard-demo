@@ -14,6 +14,19 @@ NProgress.configure({ showSpinner: false })
 
 const whiteList = ['/login', '/register']
 
+/**
+ * 教育平台中「本人数据」页面的角色要求。
+ *
+ * 这些页面的数据由后端按 JWT 身份反查 edu_student / edu_teacher，
+ * 角色不匹配时后端会返回「当前账号未绑定学生/教师信息」。
+ * 与其让用户进去只看到一条红色 500 报错，不如在前端直接拦到统一提示页。
+ * 注：/education/course、/education/curriculum、/education/analytics 是公共数据，不在此列。
+ */
+const EDUCATION_SCOPE_RULES: Array<{ match: RegExp; role: string; scope: 'student' | 'teacher' }> = [
+  { match: /^\/education\/(dashboard|records|skill|planner)(\/|$)/, role: 'STUDENT', scope: 'student' },
+  { match: /^\/education\/teaching(\/|$)/, role: 'TEACHER', scope: 'teacher' }
+]
+
 const isWhiteList = (path: string): boolean => {
   return whiteList.some((pattern: string) => isPathMatch(pattern, path))
 }
@@ -59,6 +72,30 @@ router.beforeEach(async (to, from) => {
         return { path: '/' }
       }
     }
+
+    // ---- 教育平台：按角色直达 + 角色不匹配的友好拦截 ----
+    const roles = useUserStore().roles
+
+    // 学生/教师登录后（或访问根路径时）直接进教育平台，不再落到若依通用首页。
+    // 管理员的首页仍是若依控制台首页，故不做跳转。
+    if ((to.path === '/' || to.path === '/index') && !to.query.redirect) {
+      if (roles.includes('STUDENT')) {
+        NProgress.done()
+        return { path: '/education/dashboard', replace: true }
+      }
+      if (roles.includes('TEACHER')) {
+        NProgress.done()
+        return { path: '/education/teaching', replace: true }
+      }
+    }
+
+    // 「本人数据」页面需要对应角色；否则统一跳到提示页（见 views/education/no-access）
+    const scopeRule = EDUCATION_SCOPE_RULES.find((rule) => rule.match.test(to.path))
+    if (scopeRule && !roles.includes(scopeRule.role)) {
+      NProgress.done()
+      return { path: '/no-access', query: { scope: scopeRule.scope, from: to.fullPath } }
+    }
+
     return true
   } else {
     // 没有token

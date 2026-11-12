@@ -96,7 +96,12 @@ service.interceptors.response.use((res: any) => {
     }
       return Promise.reject('无效的会话，或者会话已过期，请重新登录。')
     } else if (code === 500) {
-      ElMessage({ message: msg, type: 'error' })
+      // 「当前账号未绑定学生/教师信息」是"角色不匹配"的预期状态，不是系统故障：
+      // 这类请求由页面自行降级处理（例如课程详情里的先修自检），不弹全局红条。
+      // 真正的 500 业务异常仍然照常提示。
+      if (!/未绑定(学生|教师)/.test(String(msg))) {
+        ElMessage({ message: msg, type: 'error' })
+      }
       return Promise.reject(new Error(msg))
     } else if (code === 601) {
       ElMessage({ message: msg, type: 'warning' })
